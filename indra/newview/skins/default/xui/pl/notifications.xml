@@ -3723,11 +3723,11 @@ Przycisk zostanie wyświetlony w przypadku dostatecznej ilości przestrzeni.
 	</notification>
 	<notification name="MeshUploadErrorDetails">
 		Nie można przesłać [LABEL]: [MESSAGE]
-[DETAILS] Zobacz Firestorm.log, aby dowiedzieć się więcej.
+[DETAILS] Zobacz SpatiWorld.log, aby dowiedzieć się więcej.
 	</notification>
 	<notification name="MeshUploadError">
 		Nie można przesłać [LABEL]: [MESSAGE]
-Zobacz Firestorm.log, aby dowiedzieć się więcej.
+Zobacz SpatiWorld.log, aby dowiedzieć się więcej.
 	</notification>
 	<notification name="MeshUploadPermError">
 		Wystąpił błąd podczas pobierania uprawnień przesyłania meszy.
@@ -4366,7 +4366,7 @@ Zobacz FIRE-17710 aby dowiedzieć się więcej.
 		Pamięć podręczna (bufor danych) Twojej Przeglądarki jest pusta. Miej na uwadze, że możesz przez jakiś czas odczuwać obniżoną wydajność i spowolnione doczytywanie obiektów z Szafy.
 	</notification>
 	<notification name="FirstJoinSupportGroup2">
-		Witaj w grupie wsparcia Phoenix/Firestorm!
+		Witaj w grupie wsparcia Phoenix/SpatiWorld!
 
 Abyśmy mogli pomóc Ci lepiej zalecamy, aby Twoja Przeglądarka automatycznie prezentowała swoją wersję - będzie ona wyświetlana przed każdą Twoją wypowiedzią na tym czacie grupowym. Informacja te obejmuje aktualną wersję, skórkę, system operacyjny i status RLVa. Osoby z naszej załogi wsparcia będą mogły dać Ci bardziej sensowne porady, jeśli będą znać wersję Twojej Przeglądarki od razu.
 
@@ -4376,7 +4376,7 @@ Chcesz włączyć automatyczne prezentowanie wersji Przeglądarki?
 		<form name="form">
 			<button name="OK_okcancelignore" text="Tak" />
 			<button name="Cancel_okcancelignore" text="Nie" />
-			<ignore name="ignore" text="Dołączenie do grupy wsparcia Phoenix/Firestorm" />
+			<ignore name="ignore" text="Dołączenie do grupy wsparcia Phoenix/SpatiWorld" />
 		</form>
 	</notification>
 	<notification name="ConfirmScriptModify">
@@ -5384,8 +5384,8 @@ To ustawienie jest przeznaczone dla przypadków, gdy wykrywanie VRAM zgłasza ni
 	</notification>
 	<notification name="CurrencyURIOverrideReceived">
 		W tym regionie wybrano portal walutowy strony trzeciej.
-Należy pamiętać, że zakupy w walucie dokonywane za pośrednictwem Firestorm Viewer są transakcjami między Tobą (użytkownikiem) a dostawcą (-ami) lub sprzedawcą (-ami) waluty.
-Ani Firestorm Viewer, ani Phoenix Firestorm Viewer Project Inc., ani jego zespół nie ponoszą odpowiedzialności za jakiekolwiek koszty lub szkody wynikające bezpośrednio lub pośrednio z takich transakcji.
+Należy pamiętać, że zakupy w walucie dokonywane za pośrednictwem SpatiWorld Viewer są transakcjami między Tobą (użytkownikiem) a dostawcą (-ami) lub sprzedawcą (-ami) waluty.
+Ani SpatiWorld Viewer, ani Phoenix SpatiWorld Viewer Project Inc., ani jego zespół nie ponoszą odpowiedzialności za jakiekolwiek koszty lub szkody wynikające bezpośrednio lub pośrednio z takich transakcji.
 Jeśli nie zgadzasz się z niniejszymi warunkami użytkowania, nie należy przeprowadzać transakcji finansowych za pomocą tej przeglądarki.
 		<usetemplate ignoretext="Kiedy region ustawia nowego pomocnika walutowego." name="okignore" />
 	</notification>

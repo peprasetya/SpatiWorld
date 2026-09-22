@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <panel label="チャット" name="chat">
-	<tab_container label="Firestorm Prefs" name="tabs">
+	<tab_container label="SpatiWorld Prefs" name="tabs">
 		<!-- Chat: Visuals -->
 		<panel label="表示" name="ChatVisuals">
 			<text name="console_font_size">

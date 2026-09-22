@@ -3781,12 +3781,12 @@ URL: [AUDIOURL]
 	</notification>
 	<notification name="MeshUploadErrorDetails">
 		[LABEL] не удалось загрузить: [MESSAGE]
-[DETAILS] Смотри подробности в файле журнала Firestorm.log
+[DETAILS] Смотри подробности в файле журнала SpatiWorld.log
 	</notification>
 	<notification name="MeshUploadError">
 		Не удалось загрузить [LABEL]: [MESSAGE]
 
-Подробности смотрите в файле журнала Firestorm.log.
+Подробности смотрите в файле журнала SpatiWorld.log.
 	</notification>
 	<notification name="MeshUploadPermError">
 		Ошибка при запросе разрешений на загрузку меша.
@@ -4399,7 +4399,7 @@ https://wiki.firestormviewer.org/fs_voice
 		Кэш вашего клиента очищен. Пожалуйста, помните, что вы можете испытать замедление работы клиента и высокую нагрузку в течение короткого времени, пока загружается контент.
 	</notification>
 	<notification name="FirstJoinSupportGroup2">
-		Добро пожаловать в группу технической поддержки Firestorm!
+		Добро пожаловать в группу технической поддержки SpatiWorld!
 
 Для того, чтобы команде технической поддержки было проще, рекомендуется сообщить версию Вашего клиента в группе. Вы можете выбрать для отображения версии вашего клиента находясь непосредственно в группе. Наша команда технической поддержки может дать вам более корректную информацию, если они знают версию вашего клиента.
 
@@ -4410,7 +4410,7 @@ https://wiki.firestormviewer.org/fs_voice
 		<form name="form">
 			<button name="OK_okcancelignore" text="Да"/>
 			<button name="Cancel_okcancelignore" text="Нет"/>
-			<ignore name="ignore" text="Присоединение к группе технической поддержки The Phoenix/Firestorm"/>
+			<ignore name="ignore" text="Присоединение к группе технической поддержки The Phoenix/SpatiWorld"/>
 		</form>
 	</notification>
 	<notification name="ConfirmScriptModify">
@@ -5418,8 +5418,8 @@ https://wiki.firestormviewer.org/fs_voice
 	</notification>
 	<notification name="CurrencyURIOverrideReceived">
 Этот регион решил указать сторонний валютный портал.
-Обратите внимание, что покупки валюты, сделанные через Firestorm Viewer, являются транзакциями между вами (пользователем) и поставщиком (ами) или продавцом (ами) валюты.
-Ни Firestorm Viewer, ни Phoenix Firestorm Viewer Project Inc., ни его команда не несут ответственности за любые расходы или ущерб, возникшие прямо или косвенно в результате любой такой транзакции.
+Обратите внимание, что покупки валюты, сделанные через SpatiWorld Viewer, являются транзакциями между вами (пользователем) и поставщиком (ами) или продавцом (ами) валюты.
+Ни SpatiWorld Viewer, ни Phoenix SpatiWorld Viewer Project Inc., ни его команда не несут ответственности за любые расходы или ущерб, возникшие прямо или косвенно в результате любой такой транзакции.
 Если вы не согласны с этими условиями использования, никакие финансовые транзакции не должны проводиться с использованием этого средства просмотра.
 		<usetemplate ignoretext="Когда регион устанавливает новый валютный помощник." name="okignore" yestext="Да"/>
 	</notification>

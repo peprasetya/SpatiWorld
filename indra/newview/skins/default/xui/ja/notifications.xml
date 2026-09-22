@@ -3782,12 +3782,12 @@ Webページにリンクすると、他人がこの場所に簡単にアクセ�
 	<notification name="MeshUploadErrorDetails">
 		[LABEL]をアップロードできませんでした：[MESSAGE]
 [DETAILS]
-詳しくは、Firestorm.logをご覧ください。
+詳しくは、SpatiWorld.logをご覧ください。
 	</notification>
 	<notification name="MeshUploadError">
 		[LABEL]をアップロードできませんでした：[MESSAGE]
 
-詳しくは、Firestorm.logをご覧ください。
+詳しくは、SpatiWorld.logをご覧ください。
 	</notification>
 	<notification name="MeshUploadPermError">
 		メッシュのアップロード許可をリクエスト時にエラーが発生しました。
@@ -4355,7 +4355,7 @@ https://wiki.firestormviewer.org/fs_voice
 			<button name="No" text="いいえ"/>
 		</form>
 	</notification>
-	<!-- Firestorm Phantom -->
+	<!-- SpatiWorld Phantom -->
 	<notification name="PhantomOn">
 		ファントムモードがオンです。
 	</notification>
@@ -4377,8 +4377,8 @@ https://wiki.firestormviewer.org/fs_voice
 	<notification name="FlightAssistEnabled">
 		飛行アシストが有効です。
 	</notification>
-	<!-- Firestorm Phantom -->
-	<!-- Firestorm Reset Settings -->
+	<!-- SpatiWorld Phantom -->
+	<!-- SpatiWorld Reset Settings -->
 	<notification label="すべての設定をリセット" name="FirestormClearSettingsPrompt">
 		問題が発生している場合は、すべての設定をリセットすると役立つ場合があります。ただし、デフォルト構成に対して行ったカスタマイズをやり直す必要があります。
 
@@ -4388,9 +4388,9 @@ https://wiki.firestormviewer.org/fs_voice
 	<notification name="SettingsWillClear">
 		[APP_NAME]を再起動すると設定はクリアされます。
 	</notification>
-	<!-- Firestorm Reset Settings -->
+	<!-- SpatiWorld Reset Settings -->
 
-	<!-- Firestorm Region Group Titles -->
+	<!-- SpatiWorld Region Group Titles -->
 	<notification name="FSSetTitleRegion">
 選択したグループタイトルに割り当てるリージョン名を正確に入力してください。
 割り当てを保存する前に、入力されたリージョン名が確認されます。
@@ -4403,7 +4403,7 @@ https://wiki.firestormviewer.org/fs_voice
 リージョン「[REGION]」が見つかりませんでした。リージョン名を確認して、もう一度お試しください。
 		<usetemplate name="okbutton" yestext="ＯＫ"/>
 	</notification>
-	<!-- Firestorm Region Group Titles -->
+	<!-- SpatiWorld Region Group Titles -->
 
 	<!-- AW: opensim -->
 	<notification name="CantAddGrid">
@@ -5551,8 +5551,8 @@ http://opensimulator.org/wiki/inventory を使用して問題を修正できま�
 	</notification>
 	<notification name="CurrencyURIOverrideReceived">
 		このリージョンでは、サードパーティの通貨ポータルを指定することを選択しました。
-Firestorm Viewer を通じて行われる通貨の購入は、お客様（ユーザー）と通貨の提供者または販売者との間の取引であることにご注意ください。
-Firestorm Viewer、Phoenix Firestorm Viewer Project Inc.、またはそのチームは、そのような取引から直接的または間接的に生じる費用または損害について一切責任を負いません。
+SpatiWorld Viewer を通じて行われる通貨の購入は、お客様（ユーザー）と通貨の提供者または販売者との間の取引であることにご注意ください。
+SpatiWorld Viewer、Phoenix SpatiWorld Viewer Project Inc.、またはそのチームは、そのような取引から直接的または間接的に生じる費用または損害について一切責任を負いません。
 これらの利用規約に同意しない場合は、このビューアを使用して金融取引を行うことはできません。
 		<usetemplate ignoretext="リージョンが新しい通貨ヘルパーを設定するとき" name="okignore" yestext="ＯＫ"/>
 	</notification>

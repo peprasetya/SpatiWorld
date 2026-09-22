@@ -3808,12 +3808,12 @@ O botão aparecerá se houver espaço suficiente.
 	<notification name="MeshUploadErrorDetails">
 		[LABEL] não foi possível fazer upload: [MESSAGE]
 
-[DETAILS] Consulte Firestorm.log para obter detalhes.
+[DETAILS] Consulte SpatiWorld.log para obter detalhes.
 	</notification>
 	<notification name="MeshUploadError">
 		[LABEL] não foi possível fazer upload: [MESSAGE]
 
-Consulte Firestorm.log para obter detalhes.
+Consulte SpatiWorld.log para obter detalhes.
 	</notification>
 	<notification name="MeshUploadPermError">
 		Falha ao solicitar permissões de upload na rede
@@ -5558,7 +5558,7 @@ URL: [AUDIOURL]
 	</notification>
 
 	<notification name="FirstJoinSupportGroup2">
-Bem-vindo ao Grupo de Suporte ao Visualizador Phoenix/Firestorm!
+Bem-vindo ao Grupo de Suporte ao Visualizador Phoenix/SpatiWorld!
 
 Para simplificar o suporte, é recomendado que você compartilhe a versão atual do seu visualizador com o grupo. Essas informações incluem a versão do visualizador, a aparência do visualizador, o sistema operacional e o status do RLVa. Você pode, portanto, decidir se deseja anexar a versão do seu visualizador a cada mensagem neste bate-papo em grupo. Nossa equipe de suporte pode fornecer assistência mais útil se souberem diretamente qual versão do visualizador você está usando.
 
@@ -5569,7 +5569,7 @@ A exibição automática da versão do visualizador deve ser ativada?
 		<form name="form">
 			<button name="OK_okcancelignore" text="Sim"/>
 			<button name="Cancel_okcancelignore" text="Não"/>
-			<ignore name="ignore" text="Ao entrar no chat do grupo de suporte Phoenix/Firestorm."/>
+			<ignore name="ignore" text="Ao entrar no chat do grupo de suporte Phoenix/SpatiWorld."/>
 		</form>
 	</notification>
 
@@ -5901,8 +5901,8 @@ Esta configuração deve ser usada quando a detecção de VRAM produz resultados
 	</notification>
 	<notification name="CurrencyURIOverrideReceived">
 Esta região optou por usar um portal monetário de terceiros.
-Observe que as compras de moeda no Firestorm Viewer são transações entre você (o usuário) e os fornecedores ou vendedores da moeda.
-Nem Firestorm Viewer, Phoenix Firestorm Viewer Project Inc. nem sua equipe serão responsáveis ​​por quaisquer custos ou danos decorrentes direta ou indiretamente de tais transações.
+Observe que as compras de moeda no SpatiWorld Viewer são transações entre você (o usuário) e os fornecedores ou vendedores da moeda.
+Nem SpatiWorld Viewer, Phoenix SpatiWorld Viewer Project Inc. nem sua equipe serão responsáveis ​​por quaisquer custos ou danos decorrentes direta ou indiretamente de tais transações.
 Se você não concordar com estes Termos de Uso, nenhuma transação financeira deverá ser realizada usando este visualizador.
 		<usetemplate ignoretext="Alerta quando uma região altera o URL do portal de moeda" name="okignore" yestext="OK"/>
 	</notification>
@@ -6223,8 +6223,8 @@ Gostaria de salvá-las primeiro?
 		<usetemplate name="okcancelbuttons" notext="Não" yestext="Sim"/>
 	</notification>
 	<notification name="FSAOScriptedNotification">
-		Firestorm Animation Overrider: [AO_MESSAGE]
-		<usetemplate ignoretext="Avisar quando o Firestorm Animation Overrider for acessado por um objeto com script" name="notifyignore"/>
+		SpatiWorld Animation Overrider: [AO_MESSAGE]
+		<usetemplate ignoretext="Avisar quando o SpatiWorld Animation Overrider for acessado por um objeto com script" name="notifyignore"/>
 	</notification>
 	<notification name="OmniFilterNewRuleSet">
 		Digite um nome para o novo conjunto de regras:

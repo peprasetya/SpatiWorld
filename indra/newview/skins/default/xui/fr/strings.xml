@@ -8,7 +8,7 @@
 		Grille de Second Life
 	</string>
 	<string name="SUPPORT_SITE">
-		Portail Assistance Firestorm
+		Portail Assistance SpatiWorld
 	</string>
 	<string name="StartupLoading">
 		Chargement de [APP_NAME]...
@@ -6634,7 +6634,7 @@ correctement. Si vous continuez à recevoir ce message d&apos;erreur, veuillez v
 		avec support de OpenSimulator
 	</string>
 
-	<!-- Firestorm search -->
+	<!-- SpatiWorld search -->
 	<string name="not_found">
 		&apos;[TEXT]&apos; introuvable
 	</string>

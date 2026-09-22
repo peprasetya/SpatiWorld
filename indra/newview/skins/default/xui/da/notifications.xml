@@ -1896,7 +1896,7 @@ Ellers kan du se på verdenskortet og finde steder markeret med &quot;Infohub&qu
 		Du døde og er blevet teleporteret til din hjemmelokation.
 	</global>
 
-<!-- Firestorm Region Group Titles -->
+<!-- SpatiWorld Region Group Titles -->
   <notification name="FSSetTitleRegion">
 Enter the exact name of a region to assign to the selected group title.
 The name will be verified before the assignment is saved.
@@ -1905,6 +1905,6 @@ The name will be verified before the assignment is saved.
   <notification name="FSSetTitleRegionNotFound">
 The region '[REGION]' could not be found. Please check the name and try again.
   </notification>
-<!-- Firestorm Region Group Titles -->
+<!-- SpatiWorld Region Group Titles -->
 
 </notifications>

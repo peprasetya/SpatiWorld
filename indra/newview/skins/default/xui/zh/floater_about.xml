@@ -3,6 +3,8 @@
 	<tab_container name="about_tab">
 		<panel label="資訊" name="support_panel">
 			<text name="support_intro">
+SpatiWorld is a fork of Firestorm ( https://www.firestormviewer.org ). See the Firestorm Credits tab for the people who built what it is forked from.
+
 如需瞭解有關 Firestorm 的最新資訊，請存取
 https://www.firestormviewer.org
 			</text>
