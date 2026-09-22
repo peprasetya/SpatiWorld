@@ -39,10 +39,6 @@ public:
     // callback definition.
     typedef std::function<void* (void* data)> callback_t;
 
-    typedef std::unordered_map<std::string, LLCallbackMap> map_t;
-    typedef map_t::iterator map_iter_t;
-    typedef map_t::const_iterator map_const_iter_t;
-
     template <class T>
     static void* buildPanel(void* data)
     {
@@ -56,5 +52,13 @@ public:
     callback_t  mCallback;
     void*       mData;
 };
+
+// Not nested inside LLCallbackMap: map_t::iterator needs a complete
+// LLCallbackMap to instantiate the hashtable's node type, which isn't
+// available while still inside the class's own body (GCC 12+'s more lazy
+// template instantiation tolerates it there; GCC 11 does not).
+typedef std::unordered_map<std::string, LLCallbackMap> LLCallbackMap_map_t;
+typedef LLCallbackMap_map_t::iterator LLCallbackMap_map_iter_t;
+typedef LLCallbackMap_map_t::const_iterator LLCallbackMap_map_const_iter_t;
 
 #endif // LLCALLBACKMAP_H
