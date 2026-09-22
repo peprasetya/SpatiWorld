@@ -8,10 +8,10 @@
 		[當前伺服器]
 	</string>
 	<string name="APP_NAME">
-		Firestorm
+		SpatiWorld
 	</string>
 	<string name="CAPITALIZED_APP_NAME">
-		FIRESTORM
+		SPATIWORLD
 	</string>
 	<string name="SECOND_LIFE_GRID">
 		第二人生
@@ -2183,7 +2183,7 @@ support@secondlife.com.
 	<string name="InvFolder All">
 		全部
 	</string>
-	<!-- Virtual Firestorm system folders -->
+	<!-- Virtual SpatiWorld system folders -->
 	<string name="InvFolder #Firestorm">
 		#Firestorm
 	</string>
@@ -6197,7 +6197,7 @@ support@secondlife.com.
 	<string name="Command_Voice_Label">
 		附近的聲音
 	</string>
-	<!-- Firestorm commands -->
+	<!-- SpatiWorld commands -->
 	<string name="Command_Quickprefs_Label">
 		快速存取
 	</string>
@@ -6408,7 +6408,7 @@ support@secondlife.com.
 	<string name="Command_Voice_Tooltip">
 		在虛擬世界裡與附近的人語音通話的音量控制
 	</string>
-	<!-- Firestorm commands -->
+	<!-- SpatiWorld commands -->
 	<string name="Command_Quickprefs_Tooltip">
 		快速更改常用首選設定
 	</string>
@@ -6994,7 +6994,7 @@ SecondLife.com網站的「支援」部分
 	<string name="FSWithOpensim">
 		使用OpenSimulator專案支援
 	</string>
-	<!-- Firestorm search -->
+	<!-- SpatiWorld search -->
 	<string name="not_found">
 		未找到 '[TEXT]'
 	</string>

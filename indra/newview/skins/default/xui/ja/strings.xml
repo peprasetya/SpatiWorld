@@ -2022,7 +2022,7 @@ https://support.secondlife.com よりSecond Lifeのサポートまでお問い�
 	<string name="InvFolder All">
 		全員
 	</string>
-	<!-- Virtual Firestorm system folders -->
+	<!-- Virtual SpatiWorld system folders -->
 	<string name="InvFolder #Firestorm">#Firestorm</string>
 	<string name="InvFolder #Phoenix">#Phoenix</string>
 	<string name="InvFolder #RLV">#RLV</string>
@@ -5701,7 +5701,7 @@ www.secondlife.com から最新バージョンをダウンロードしてくだ�
 	<!-- Ansariel: Renamed for FS (FIRE-5019)
 	<string name="Command_Voice_Label">Voice settings</string>-->
 	<string name="Command_Voice_Label">近くのボイス</string>
-	<!-- Firestorm commands -->
+	<!-- SpatiWorld commands -->
 	<string name="Command_Quickprefs_Label">簡易設定</string>
 	<string name="Command_AO_Label">アニメーションオーバーライド</string>
 	<string name="Command_Webbrowser_Label">Webブラウザ</string>
@@ -5833,7 +5833,7 @@ www.secondlife.com から最新バージョンをダウンロードしてくだ�
 	<string name="Command_Voice_Tooltip">
 		インワールドでのコールや近くにいる人物の音量調整します。
 	</string>
-	<!-- Firestorm commands -->
+	<!-- SpatiWorld commands -->
 	<string name="Command_Quickprefs_Tooltip">よく使用する設定を変更するための簡易設定を開きます。</string>
 	<string name="Command_AO_Tooltip">アニメーションオーバーライド</string>
 	<string name="Command_Webbrowser_Tooltip">内部ブラウザを開きます。（CTRL＋SHIFT＋Z）</string>
@@ -6266,7 +6266,7 @@ www.secondlife.com のウェブサイトに接続できるかご確認くださ�
 	<string name="FSWithHavok">Havokサポート</string>
 	<string name="FSWithOpensim">OpenSimulatorサポート</string>
 
-	<!-- Firestorm search -->
+	<!-- SpatiWorld search -->
 	<string name="not_found">
 		「[TEXT]」は見つかりませんでした。
 	</string>

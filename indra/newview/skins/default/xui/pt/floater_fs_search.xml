@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
-<floater name="floater_fs_search" title="Busca Firestorm">
+<floater name="floater_fs_search" title="Busca SpatiWorld">
 	<floater.string name="string.location">
 		Local: [LOCATION]
 	</floater.string>

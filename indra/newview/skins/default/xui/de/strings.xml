@@ -6605,7 +6605,7 @@ Support-Bereich der Website Secondlife.com und melden Sie das Problem.
 [https://community.secondlife.com/knowledgebase/english/error-messages-r520/#Section__3 Knowledge-Base]
 	</string>
 
-<!-- Firestorm-specific translations -->
+<!-- SpatiWorld-specific translations -->
 	<string name="MediaFilterActionAllow">
 		erlauben
 	</string>
@@ -6809,7 +6809,7 @@ Support-Bereich der Website Secondlife.com und melden Sie das Problem.
 		mit OpenSimulator-Unterstützung
 	</string>
 
-	<!-- Firestorm search -->
+	<!-- SpatiWorld search -->
 	<string name="not_found">
 		„[TEXT]“ nicht gefunden.
 	</string>

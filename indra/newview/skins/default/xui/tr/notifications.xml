@@ -4545,7 +4545,7 @@ Lütfen kendi envanterinize kopyalayın ve yeniden deneyin.
 		Rota [TRACK1] kaynağından [TRACK2] hedefine yüklenemiyor.
 	</notification>
 
-<!-- Firestorm Region Group Titles -->
+<!-- SpatiWorld Region Group Titles -->
   <notification name="FSSetTitleRegion">
 Seçilen grup unvanına atamak için bir bölgenin tam adını girin.
 Atama kaydedilmeden önce ad doğrulanacaktır.
@@ -4554,6 +4554,6 @@ Atama kaydedilmeden önce ad doğrulanacaktır.
   <notification name="FSSetTitleRegionNotFound">
 '[REGION]' bölgesi bulunamadı. Lütfen adı kontrol edip tekrar deneyin.
   </notification>
-<!-- Firestorm Region Group Titles -->
+<!-- SpatiWorld Region Group Titles -->
 
 </notifications>

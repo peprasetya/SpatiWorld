@@ -4516,7 +4516,7 @@ Consultez FIRE-17710 pour plus de détails.
 		Le cache du client est vide. Le téléchargement du nouveau contenu peut entraîner un ralentissement de la vitesse d'affichage et du chargement de l'inventaire pendant une courte période.
 	</notification>
 	<notification name="FirstJoinSupportGroup2">
-		Bienvenue dans le groupe de support aux téléspectateurs de Phoenix/Firestorm !
+		Bienvenue dans le groupe de support aux téléspectateurs de Phoenix/SpatiWorld !
 
 Pour faciliter le support, il est recommandé d'annoncer la version de votre client au groupe. Ces informations comprennent la version actuelle du client, le skin du client, le système d'exploitation et le statut RLVa. Vous pouvez choisir d'afficher la version de votre client en face de toute discussion que vous envoyez au groupe. Nos membres de l'assistance peuvent vous donner immédiatement des conseils plus pertinents s'ils connaissent la version du client que vous utilisez.
 
@@ -4527,7 +4527,7 @@ Voulez-vous activer l'affichage automatique de la version du client ?
 		<form name="form">
 			<button name="OK_okcancelignore" text="Oui"/>
 			<button name="Cancel_okcancelignore" text="Non"/>
-			<ignore name="ignore" text="Le groupe de support Phoenix/Firestorm a été rejoint."/>
+			<ignore name="ignore" text="Le groupe de support Phoenix/SpatiWorld a été rejoint."/>
 		</form>
 	</notification>
 	<notification name="ConfirmScriptModify">
@@ -5528,8 +5528,8 @@ Ce paramètre est destiné aux cas où la détection de la VRAM indique des vale
 	</notification>
 	<notification name="CurrencyURIOverrideReceived">
 		Cette région a choisi de spécifier un portail monétaire tiers.
-Veuillez noter que les achats de devises effectués par le biais de Firestorm Viewer sont des transactions entre vous (l'utilisateur) et le(s) fournisseur(s) ou vendeur(s) de la devise.
-Ni Firestorm Viewer, ni le Phoenix Firestorm Viewer Project Inc. ni son équipe ne peuvent être tenus responsables de tout coût ou dommage résultant directement ou indirectement d'une telle transaction.
+Veuillez noter que les achats de devises effectués par le biais de SpatiWorld Viewer sont des transactions entre vous (l'utilisateur) et le(s) fournisseur(s) ou vendeur(s) de la devise.
+Ni SpatiWorld Viewer, ni le Phoenix SpatiWorld Viewer Project Inc. ni son équipe ne peuvent être tenus responsables de tout coût ou dommage résultant directement ou indirectement d'une telle transaction.
 Si vous n'acceptez pas ces conditions d'utilisation, vous ne devez pas effectuer de transactions financières en utilisant ce client.
 		<usetemplate ignoretext="When the region sets a new currency helper." name="okignore" yestext="OK"/>
 	</notification>
@@ -5717,7 +5717,7 @@ Veuillez noter que "Utiliser l'environnement partagé" et "Basé sur le cycle jo
 		L'importation par lot des réglages Windlights est terminée.
 	</notification>
 	<notification name="FSAOScriptedNotification">
-		Superviseur d'animation Firestorm : [AO_MESSAGE]
+		Superviseur d'animation SpatiWorld : [AO_MESSAGE]
 	</notification>
 	<notification name="WarnForceLoginURL">
 		L'URL de l'écran d'accueil de connexion est remplacée à des fins de test.

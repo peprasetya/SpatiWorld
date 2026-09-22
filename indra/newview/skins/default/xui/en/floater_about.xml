@@ -26,13 +26,15 @@
       <text
         follows="top|left|right"
         font="SansSerif"
-        height="30"
+        height="90"
         layout="topleft"
         left="11"
         name="support_intro"
         top="16"
         width="434"
         wrap="true">
+SpatiWorld is a fork of Firestorm ( https://www.firestormviewer.org ). See the Firestorm Credits tab for the people who built what it is forked from.
+
 For the latest information about Firestorm, visit 
 https://www.firestormviewer.org
       </text>

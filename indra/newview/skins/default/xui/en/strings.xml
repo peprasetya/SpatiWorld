@@ -7,8 +7,8 @@
 
 	<!-- Default Args - these arguments will be replaced in all strings -->
 	<string name="SECOND_LIFE">[CURRENT_GRID]</string>
-	<string name="APP_NAME">Firestorm</string>
-	<string name="CAPITALIZED_APP_NAME">FIRESTORM</string>
+	<string name="APP_NAME">SpatiWorld</string>
+	<string name="CAPITALIZED_APP_NAME">SPATIWORLD</string>
 	<string name="SECOND_LIFE_GRID">Second Life Grid</string>
 	<string name="SUPPORT_SITE">Firestorm Support Portal</string>
 	<string name="DOWNLOAD_URL">https://www.firestormviewer.org/choose-your-platform/</string>
@@ -1001,7 +1001,7 @@ If you continue to receive this message, please contact Second Life support for 
 	<string name="InvFolder Friends">Friends</string>	
 	<string name="InvFolder All">All</string>
 
-	<!-- Virtual Firestorm system folders -->
+	<!-- Virtual SpatiWorld system folders -->
 	<string name="InvFolder #Firestorm">#Firestorm</string>
 	<string name="InvFolder #Phoenix">#Phoenix</string>
 	<string name="InvFolder #RLV">#RLV</string>
@@ -2762,7 +2762,7 @@ name="Command_360_Capture_Label">360° Snapshot</string>
 <!-- Ansariel: Renamed for FS (FIRE-5019)
   <string name="Command_Voice_Label">Voice settings</string>-->
   <string name="Command_Voice_Label">Nearby voice</string>
-<!-- Firestorm commands -->
+<!-- SpatiWorld commands -->
   <string name="Command_Quickprefs_Label">Quick prefs</string>
   <string name="Command_AO_Label">Animation overrider</string>
   <string name="Command_Webbrowser_Label">Web browser</string>
@@ -2834,7 +2834,7 @@ name="Command_360_Capture_Label">360° Snapshot</string>
   <string name="Command_Speak_Tooltip">Speak with people nearby using your microphone</string>
   <string name="Command_View_Tooltip">Changing camera angle</string>
   <string name="Command_Voice_Tooltip">Volume controls for calls and people near you in world</string>
-<!-- Firestorm commands -->
+<!-- SpatiWorld commands -->
   <string name="Command_Quickprefs_Tooltip">Quick preferences for changing often used settings</string>
   <string name="Command_AO_Tooltip">Animation overrider</string>
   <string name="Command_Webbrowser_Tooltip">Opens the internal web browser (CTRL+SHIFT+Z)</string>
@@ -3102,7 +3102,7 @@ and report the problem.
   <string name="FSWithHavok">with Havok support</string>
   <string name="FSWithOpensim">with OpenSimulator support</string>
     
-  <!-- Firestorm search -->
+  <!-- SpatiWorld search -->
   <string name="not_found">&apos;[TEXT]&apos; not found</string>
   <string name="no_results">No results</string>
   <string name="searching">Searching...</string>

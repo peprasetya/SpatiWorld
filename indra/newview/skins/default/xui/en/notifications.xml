@@ -10028,7 +10028,7 @@ Select residents to share with.
     icon="alert.tga"
     type="alert">
       [LABEL] failed to upload: [MESSAGE]
-[DETAILS] See Firestorm.log for details
+[DETAILS] See SpatiWorld.log for details
   </notification>
 
   <notification
@@ -10037,7 +10037,7 @@ Select residents to share with.
     type="alert">
       [LABEL] failed to upload: [MESSAGE]
 
-See Firestorm.log for details
+See SpatiWorld.log for details
   </notification>
    
   <notification
@@ -11422,7 +11422,7 @@ Would you like to send them this information?
     </form>
   </notification>
 
-<!-- Firestorm Phantom -->
+<!-- SpatiWorld Phantom -->
 
   <notification
    icon="notifytip.tga"
@@ -11473,9 +11473,9 @@ Disabling movelock...
 Flight Assist is enabled
   </notification>
 
-<!-- Firestorm Phantom -->
+<!-- SpatiWorld Phantom -->
 
-<!-- Firestorm Reset Settings -->
+<!-- SpatiWorld Reset Settings -->
   <notification
     icon="alertmodal.tga"
     label="Reset all settings"
@@ -11496,9 +11496,9 @@ Flight Assist is enabled
     type="alertmodal">
     Settings will be cleared after restarting [APP_NAME].
   </notification>
-<!-- Firestorm Reset Settings -->
+<!-- SpatiWorld Reset Settings -->
 
-<!-- Firestorm Region Group Titles -->
+<!-- SpatiWorld Region Group Titles -->
   <notification
     icon="alertmodal.tga"
     name="FSSetTitleRegion"
@@ -11530,7 +11530,7 @@ The region '[REGION]' could not be found. Please check the name and try again.
      name="okbutton"
      yestext="OK"/>
   </notification>
-<!-- Firestorm Region Group Titles -->
+<!-- SpatiWorld Region Group Titles -->
 
 <!-- AW: opensim -->
   <notification icon="alertmodal.tga"
@@ -11701,7 +11701,7 @@ Your viewer cache is currently empty. Please be aware that you may experience sl
    icon="alertmodal.tga"
    name="FirstJoinSupportGroup2"
    type="alertmodal">
-Welcome to the Phoenix/Firestorm Viewer Support Group!
+Welcome to the Phoenix/SpatiWorld Viewer Support Group!
 
 To make support easier, it is recommended to announce your viewer's version to the group. This information includes current viewer version, viewer skin, operating system and RLVa status. You can choose to display your viewer's version in front of any chat you send to the group. Our support members can give you more meaningful advice right away if they know the viewer version you are on.
 
@@ -14416,8 +14416,8 @@ This setting is intended for cases where VRAM detection is reporting incorrect v
    name="CurrencyURIOverrideReceived"
    type="alertmodal">
 This region has elected to specify a third-party currency portal. 
-Please note that currency purchases made through Firestorm Viewer are transactions between you (the user) and the provider(s) or seller(s) of the currency. 
-Neither Firestorm Viewer, the Phoenix Firestorm Viewer Project Inc., nor its team shall be liable for any cost or damage arising either directly or indirectly from any such transaction. 
+Please note that currency purchases made through SpatiWorld Viewer are transactions between you (the user) and the provider(s) or seller(s) of the currency. 
+Neither SpatiWorld Viewer, the Phoenix SpatiWorld Viewer Project Inc., nor its team shall be liable for any cost or damage arising either directly or indirectly from any such transaction. 
 If you do not agree to these terms of use, then no financial transactions should be conducted using this viewer.
    <usetemplate
     ignoretext="When the region sets a new currency helper."
@@ -14947,9 +14947,9 @@ Bulk import of Windlights has finished.
    <unique combine = "cancel_old">
      <context>FSAOScriptedNotification</context>
    </unique>
-Firestorm Animation Overrider: [AO_MESSAGE]
+SpatiWorld Animation Overrider: [AO_MESSAGE]
    <usetemplate
-    ignoretext="Warn me when the Firestorm Animation Overrider gets accessed by a scripted object"
+    ignoretext="Warn me when the SpatiWorld Animation Overrider gets accessed by a scripted object"
     name="notifyignore"/>
   </notification>
   <notification

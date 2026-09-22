@@ -120,7 +120,7 @@
 				ステータスバー
 			</text>
 			<check_box name="ShowNetStats" label="トラフィックインジケータを画面の右上に表示する" tool_tip="ステータスオーバーレイにトラフィックインジケータを表示します。"/>
-			<check_box label="トラフィックインジケータは１秒当りの平均周期を表示する（クラシックな表示方法）" name="FSStatbarLegacyMeanPerSec" tool_tip="ここにチェックを入れると、Firestorm は現在測定されている値でなく、１秒当りの平均周期をラグメータに表示するクラシックな表示方法を使用します。"/>
+			<check_box label="トラフィックインジケータは１秒当りの平均周期を表示する（クラシックな表示方法）" name="FSStatbarLegacyMeanPerSec" tool_tip="ここにチェックを入れると、SpatiWorld は現在測定されている値でなく、１秒当りの平均周期をラグメータに表示するクラシックな表示方法を使用します。"/>
 			<check_box label="トラフィックインジケータをクリックしたときにラグメーターでなく統計情報を表示する" name="FSUseStatsInsteadOfLagMeter"/>
 			<check_box name="FSEnableVolumeControls" label="メディアコントロールをトップメニューに表示する" tool_tip="ここにチェックを入れると、ファイアーストームの画面右上にメディアコントロール（音量、メディア、ストリーム）が表示されるようになります。既に独自の場所にコントロールが配置されている場合にこのチェックを外しておくと便利です。"/>
 			<check_box name="FSStatusbarShowSimulatorVersion" label="ステータスバーにシミュレータのチャンネルを表示する" tool_tip="Ｖ１形式のステータスバーに現在のシミュレータのチャンネル（RC Magnum, RC Le Tigre, RC BlueSteel等）を表示します。"/>

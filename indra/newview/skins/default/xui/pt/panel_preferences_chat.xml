@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <panel label="Bate-papo de texto" name="chat">
-	<tab_container name="tabs" label="Preferências do Firestorm">
+	<tab_container name="tabs" label="Preferências do SpatiWorld">
 		<panel label="Visual" name="ChatVisuals">
 			<text name="console_font_size" width="180">
 				Tamanho da fonte do console:

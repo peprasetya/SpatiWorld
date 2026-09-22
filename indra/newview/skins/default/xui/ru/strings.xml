@@ -8,16 +8,16 @@
 		[CURRENT_GRID]
 	</string>
 	<string name="APP_NAME">
-		Firestorm
+		SpatiWorld
 	</string>
 	<string name="CAPITALIZED_APP_NAME">
-		FIRESTORM
+		SPATIWORLD
 	</string>
 	<string name="SECOND_LIFE_GRID">
 		Сеть Second Life
 	</string>
 	<string name="SUPPORT_SITE">
-		Портал технической поддержки Firestorm
+		Портал технической поддержки SpatiWorld
 	</string>
 	<string name="StartupDetectingHardware">
 		Обнаружение оборудования...

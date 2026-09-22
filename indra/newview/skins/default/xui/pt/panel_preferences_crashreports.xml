@@ -2,7 +2,7 @@
 <panel label="Relatórios de falha" name="crash_reports">
 	<check_box label="Enviar relatórios de falha para firestormviewer.org" name="checkSendCrashReports"/>
 	<check_box label="Perguntar antes de enviar" name="checkSendCrashReportsAlwaysAsk"/>
-	<check_box label="Incluir arquivos de configuração do Firestorm" name="checkSendSettings"/>
+	<check_box label="Incluir arquivos de configuração do SpatiWorld" name="checkSendSettings"/>
 	<text name="textSendSettings">
 		(contém nome de usuário)
 	</text>
