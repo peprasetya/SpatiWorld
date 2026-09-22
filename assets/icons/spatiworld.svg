@@ -1,0 +1,52 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SpatiWorld icon: a wireframe globe framed by an AR visor arc, with three glowing presence markers">
+  <title>SpatiWorld icon</title>
+  <desc>A wireframe globe inside a dark rounded-square badge, framed by an AR-glasses visor arc, with three small glowing dots marking presence in the shared world.</desc>
+  <defs>
+    <linearGradient id="w-bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#2f3358"/>
+      <stop offset="0.5" stop-color="#15172e"/>
+      <stop offset="1" stop-color="#08090f"/>
+    </linearGradient>
+    <linearGradient id="w-strip" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16e6c0"/>
+      <stop offset="0.45" stop-color="#37a6f7"/>
+      <stop offset="1" stop-color="#8f6bf2"/>
+    </linearGradient>
+    <radialGradient id="w-sphere" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#232847"/>
+      <stop offset="1" stop-color="#0c0e1c"/>
+    </radialGradient>
+    <filter id="w-soft" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="26"/>
+    </filter>
+  </defs>
+
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#w-bg)"/>
+
+  <circle cx="512" cy="552" r="300" fill="url(#w-strip)" opacity="0.16" filter="url(#w-soft)"/>
+
+  <g>
+    <circle cx="512" cy="552" r="280" fill="url(#w-sphere)" stroke="#eef1ff" stroke-width="16"/>
+    <g fill="none" stroke="url(#w-strip)" stroke-width="7" opacity="0.85">
+      <line x1="232" y1="552" x2="792" y2="552"/>
+      <line x1="512" y1="272" x2="512" y2="832"/>
+      <ellipse cx="512" cy="552" rx="140" ry="280"/>
+      <ellipse cx="512" cy="552" rx="280" ry="140"/>
+    </g>
+  </g>
+
+  <g fill="none" stroke="url(#w-strip)" stroke-width="4" opacity="0.4">
+    <path d="M 630 452 L 410 630 L 600 700 Z"/>
+  </g>
+  <g fill="url(#w-strip)">
+    <circle cx="630" cy="452" r="16"/>
+    <circle cx="410" cy="630" r="14"/>
+    <circle cx="600" cy="700" r="13"/>
+  </g>
+
+  <path d="M 348 400 q 164 -132 328 0" fill="none" stroke="#eef1ff" stroke-width="19" stroke-linecap="round"/>
+  <g fill="none" stroke="#eef1ff" stroke-width="19" stroke-linecap="round" opacity="0.45">
+    <path d="M 348 400 l -56 -26"/>
+    <path d="M 676 400 l 56 -26"/>
+  </g>
+</svg>
