@@ -41,6 +41,7 @@
 #include "llviewertexture.h"
 #include "llframetimer.h"
 #include "llview.h"
+#include "llrootview.h"
 #include "v3math.h"
 
 #include <cmath>
@@ -62,6 +63,9 @@ F32                   SpatiandStereo::sEyeSeparation = 0.064f;
 const U8*             SpatiandStereo::sPoses = NULL;
 LLRenderTarget*       SpatiandStereo::sEyeTarget = NULL;
 LLRenderTarget*       SpatiandStereo::sUITarget = NULL;
+LLRenderTarget*       SpatiandStereo::sFloaterTarget = NULL;
+bool                  SpatiandStereo::sFloatersDrawn = false;
+bool                  SpatiandStereo::sPointerOnFloaters = false;
 S32                   SpatiandStereo::sEyeWidth = 0;
 S32                   SpatiandStereo::sEyeHeight = 0;
 LLRect                SpatiandStereo::sBoxRaw;
@@ -687,7 +691,7 @@ void SpatiandStereo::noteEyeMatrices(const F32* projection, const F32* modelview
     sEyeMatricesKnown = true;
 }
 
-bool SpatiandStereo::beginUI()
+bool SpatiandStereo::beginUI(ELayer layer)
 {
     // Once a frame: the panel is the same for both eyes, and drawing it twice would also run
     // everything in the UI that counts frames twice (the HUD's zoom easing, for one).
@@ -695,69 +699,124 @@ bool SpatiandStereo::beginUI()
     {
         return false;
     }
+    LLRenderTarget*& target = (layer == LAYER_FLOATERS) ? sFloaterTarget : sUITarget;
     const U32 width = gViewerWindow->getWindowWidthRaw();
     const U32 height = gViewerWindow->getWindowHeightRaw();
-    if (!sUITarget)
+    if (!target)
     {
-        sUITarget = new LLRenderTarget();
+        target = new LLRenderTarget();
     }
-    if (sUITarget->getWidth() != width || sUITarget->getHeight() != height)
+    if (target->getWidth() != width || target->getHeight() != height)
     {
-        sUITarget->release();
+        target->release();
         // With depth, for the HUD attachments: they are objects, and sort by it.
-        if (!sUITarget->allocate(width, height, GL_RGBA, true))
+        if (!target->allocate(width, height, GL_RGBA, true))
         {
             LL_WARNS("Spatiand") << "could not make a " << width << "x" << height
                                  << " target to lay the UI out in" << LL_ENDL;
             return false;
         }
     }
-    sUITarget->bindTarget();
+    target->bindTarget();
     // Alpha written too, and accumulated as coverage: it is what lets the world show through
     // wherever there is no UI, and only there -- an opaque floater has to stay opaque.
     gGL.setColorMask(true, true);
     LLRender::sLayerAlpha = true;
     gGL.setSceneBlendType(LLRender::BT_ALPHA);
     glClearColor(0.f, 0.f, 0.f, 0.f);
-    sUITarget->clear();
+    target->clear();
+    if (layer == LAYER_CHROME)
+    {
+        // Everything but the floaters, which are the other layer.
+        LLView::sDrawSkip = gFloaterView;
+    }
     return true;
 }
 
-void SpatiandStereo::endUI()
+void SpatiandStereo::endUI(ELayer layer)
 {
+    LLView::sDrawSkip = NULL;
+    LLRenderTarget* target = (layer == LAYER_FLOATERS) ? sFloaterTarget : sUITarget;
     gGL.flush();
-    // Is there UI under the pointer? One pixel, read while the panel's target is still bound:
-    // the cursor goes on the panel if so, into the world if not.
+    // Is there UI under the pointer? One pixel, read while the layer's target is still bound:
+    // the cursor goes on the nearest layer that has something there, into the world if none.
+    bool covered = false;
     {
         const LLCoordGL mouse = gViewerWindow->getCurrentMouse();
         const S32 x = ll_round(mouse.mX * gViewerWindow->getDisplayScale().mV[VX]);
         const S32 y = ll_round(mouse.mY * gViewerWindow->getDisplayScale().mV[VY]);
-        sPointerOnUI = false;
-        if (x >= 0 && y >= 0 && x < (S32)sUITarget->getWidth() && y < (S32)sUITarget->getHeight())
+        if (x >= 0 && y >= 0 && x < (S32)target->getWidth() && y < (S32)target->getHeight())
         {
             U8 pixel[4] = { 0, 0, 0, 0 };
             glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
-            sPointerOnUI = pixel[3] > 24;
+            covered = pixel[3] > 24;
         }
     }
     LLRender::sLayerAlpha = false;
     gGL.setSceneBlendType(LLRender::BT_ALPHA);
-    sUITarget->flush();
+    target->flush();
     gGL.setColorMask(true, false);
-    sUIDrawn = true;
+    if (layer == LAYER_FLOATERS)
+    {
+        sPointerOnFloaters = covered;
+        sFloatersDrawn = true;
+    }
+    else
+    {
+        sPointerOnUI = covered;
+        sUIDrawn = true;
+    }
+}
+
+void SpatiandStereo::drawFloaters()
+{
+    if (!gFloaterView || !gViewerWindow)
+    {
+        return;
+    }
+    // What LLViewerWindow::draw does for the whole UI, for one branch of it.
+    gViewerWindow->setup2DRender();
+    LLView::sDirtyRect = gViewerWindow->getWindowRectScaled();
+    LLView::sIsDrawing = true;
+    gUIProgram.bind();
+    gGL.color4f(1.f, 1.f, 1.f, 1.f);
+    gGL.matrixMode(LLRender::MM_MODELVIEW);
+    gGL.pushMatrix();
+    gGL.loadIdentity();
+    LLUI::pushMatrix();
+    gGL.scaleUI(gViewerWindow->getDisplayScale().mV[VX], gViewerWindow->getDisplayScale().mV[VY], 1.f);
+    LLView::sDrawOnly = gFloaterView;
+    gViewerWindow->getRootView()->draw();
+    LLView::sDrawOnly = NULL;
+    LLUI::popMatrix();
+    gGL.popMatrix();
+    gUIProgram.unbind();
+    LLView::sIsDrawing = false;
 }
 
 void SpatiandStereo::drawUI()
 {
-    if (!sUIDrawn || !sUITarget || !sEyeMatricesKnown || !sFrameKnown)
+    if (!sEyeMatricesKnown || !sFrameKnown)
     {
         return;
     }
-    // How far in front of the aim the panel stands. Its size follows, so it fills the aim's
+    // How far in front of the aim each layer stands. Its size follows, so it fills the aim's
     // view exactly; the distance only decides where the eyes converge on it -- nearer than the
-    // avatar, so the UI is never seen behind what it is about.
+    // avatar, so the UI is never seen behind what it is about, and the chrome nearer still.
     static LLCachedControl<F32> panel_distance(gSavedSettings, "SpatiWorldPanelDistance", 1.5f);
-    const F32 PANEL_DISTANCE = llclamp((F32)panel_distance, 0.5f, 100.f);
+    static LLCachedControl<F32> chrome_distance(gSavedSettings, "SpatiWorldChromeDistance", 1.2f);
+    if (sFloatersDrawn && sFloaterTarget)
+    {
+        drawLayer(sFloaterTarget, llclamp((F32)panel_distance, 0.5f, 100.f));
+    }
+    if (sUIDrawn && sUITarget)
+    {
+        drawLayer(sUITarget, llclamp((F32)chrome_distance, 0.4f, 100.f));
+    }
+}
+
+void SpatiandStereo::drawLayer(LLRenderTarget* target, F32 PANEL_DISTANCE)
+{
     const F32 tan_v = tanf(sFrameView * 0.5f);
     const F32 tan_h = tan_v * sFrameAspect;
     // The canvas's edges as tangents of the aim's view: the box spans -1..1 of it, and the
@@ -795,7 +854,7 @@ void SpatiandStereo::drawUI()
         // What the UI drew into a clear target is already multiplied by its own alpha.
         gGL.blendFunc(LLRender::BF_ONE, LLRender::BF_ONE_MINUS_SOURCE_ALPHA);
         gUIProgram.bind();
-        gGL.getTexUnit(0)->bind(sUITarget);
+        gGL.getTexUnit(0)->bind(target);
         gGL.getTexUnit(0)->setTextureFilteringOption(LLTexUnit::TFO_BILINEAR);
         gGL.color4f(1.f, 1.f, 1.f, 1.f);
         gGL.begin(LLRender::TRIANGLE_STRIP);
@@ -990,8 +1049,13 @@ void SpatiandStereo::drawCursor()
     const LLVector3 origin = LLViewerCamera::getInstance()->getOrigin();
 
     static LLCachedControl<F32> panel_distance(gSavedSettings, "SpatiWorldPanelDistance", 1.5f);
+    static LLCachedControl<F32> chrome_distance(gSavedSettings, "SpatiWorldChromeDistance", 1.2f);
     LLVector3 point;
     if (sPointerOnUI)
+    {
+        point = origin + along * llclamp((F32)chrome_distance, 0.4f, 100.f);
+    }
+    else if (sPointerOnFloaters)
     {
         point = origin + along * llclamp((F32)panel_distance, 0.5f, 100.f);
     }
@@ -1016,7 +1080,7 @@ void SpatiandStereo::drawCursor()
     // Facing the camera, a constant angular size: a ring with a dark edge, readable on snow
     // and on night sky alike, and a dot in the middle for the exact spot.
     const F32 distance = (point - origin).magVec();
-    const F32 radius = distance * tanf(0.9f * DEG_TO_RAD);
+    const F32 radius = distance * tanf(0.45f * DEG_TO_RAD);
     const LLVector3 right = -LLViewerCamera::getInstance()->getLeftAxis() * radius;
     const LLVector3 up = LLViewerCamera::getInstance()->getUpAxis() * radius;
 

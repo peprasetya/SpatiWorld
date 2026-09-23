@@ -81,6 +81,8 @@ LLView::DrilldownFunc LLView::sDrilldown =
 
 //#if LL_DEBUG
 bool LLView::sIsDrawing = false;
+LLView* LLView::sDrawOnly = NULL; // <SpatiWorld/>
+LLView* LLView::sDrawSkip = NULL; // <SpatiWorld/>
 //#endif
 
 // Compiler optimization, generate extern template
@@ -1306,6 +1308,18 @@ void LLView::drawChildren()
             {
                 continue;
             }
+
+            // <SpatiWorld> See LLView::sDrawOnly.
+            if (viewp == sDrawSkip)
+            {
+                continue;
+            }
+            if (sDrawOnly && sDrawOnly != this && sDrawOnly->hasAncestor(this)
+                && viewp != sDrawOnly && !sDrawOnly->hasAncestor(viewp))
+            {
+                continue;
+            }
+            // </SpatiWorld>
 
             if (viewp->getVisible() && viewp->getRect().isValid())
             {

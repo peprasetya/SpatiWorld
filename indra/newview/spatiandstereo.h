@@ -138,8 +138,16 @@ public:
     // button in a corner is reached by turning the head a little, not by straining the eyes.
     // beginUI is true once a frame, in the first eye, with the panel's target bound; drawUI
     // puts the panel into whichever eye is being drawn.
-    static bool beginUI();
-    static void endUI();
+    //
+    // Two layers, at two depths. The floaters (and HUD attachments) are the far one; the menu
+    // bar, toolbars, chat bar, menus and tooltips the near one, SpatiWorldChromeDistance away --
+    // the controls a hand reaches for stand in front of the windows they control, and a menu
+    // is never behind the floater it opened over. Each is drawn once a frame, in the first eye.
+    enum ELayer { LAYER_FLOATERS, LAYER_CHROME };
+    static bool beginUI(ELayer layer);
+    static void endUI(ELayer layer);
+    // The far layer's contents: the floater view's branch of the UI and nothing else.
+    static void drawFloaters();
     static void drawUI();
     // **The pointer, drawn here and at its depth.** spatiand knows which way the pointer points
     // and nothing about how far away the thing under it is; this viewer knows both. So it asks
@@ -147,7 +155,10 @@ public:
     // eye: on the panel when the pointer is over the UI, on whatever the pointer rests on in the
     // world otherwise, and far off over the sky.
     static void drawCursor();
-    // The eye's own matrices, as LLViewerCamera::setPerspective made them, to draw the panel with.
+    // The eye's own matrices, as the world was drawn with them this pass, to draw the panel
+    // with. Taken where the UI starts drawing: later perspective setups in the pass (probes,
+    // impostors) use other fields of view, and a panel drawn through one of those stands at
+    // the wrong depth.
     static void noteEyeMatrices(const F32* projection, const F32* modelview);
 
     // The joystick button that detaches the camera from the avatar, and gives it back.
@@ -174,6 +185,10 @@ private:
     static void mapPoses();
     static LLRenderTarget* sEyeTarget;
     static LLRenderTarget* sUITarget;
+    static LLRenderTarget* sFloaterTarget;
+    static bool sFloatersDrawn;
+    static bool sPointerOnFloaters;
+    static void drawLayer(LLRenderTarget* target, F32 distance);
     static S32 sEyeWidth;
     static S32 sEyeHeight;
     // The box on the canvas, as it was when this frame began; while the eyes are drawn the

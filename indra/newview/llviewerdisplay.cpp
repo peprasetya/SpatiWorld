@@ -1630,6 +1630,8 @@ void render_ui(F32 zoom_factor, int subfield)
         gGL.pushMatrix();
         gGL.loadMatrix(gGLLastModelView);
         set_current_modelview(glm::make_mat4(gGLLastModelView));
+        // <SpatiWorld> The matrices this eye's world was drawn with; see noteEyeMatrices.
+        SpatiandStereo::noteEyeMatrices(gGLLastProjection, gGLLastModelView);
     }
 
     if(LLSceneMonitor::getInstance()->needsUpdate())
@@ -1715,14 +1717,22 @@ void render_ui(F32 zoom_factor, int subfield)
         // where it stands. Name tags and selection stay in the world, drawn per eye above.
         if (ui_panel)
         {
-            if (SpatiandStereo::beginUI())
+            if (SpatiandStereo::beginUI(SpatiandStereo::LAYER_FLOATERS))
             {
                 render_hud_attachments();
                 if (render_ui)
                 {
+                    SpatiandStereo::drawFloaters();
+                }
+                SpatiandStereo::endUI(SpatiandStereo::LAYER_FLOATERS);
+            }
+            if (SpatiandStereo::beginUI(SpatiandStereo::LAYER_CHROME))
+            {
+                if (render_ui)
+                {
                     render_ui_2d();
                 }
-                SpatiandStereo::endUI();
+                SpatiandStereo::endUI(SpatiandStereo::LAYER_CHROME);
             }
             SpatiandStereo::drawUI();
             SpatiandStereo::drawCursor();

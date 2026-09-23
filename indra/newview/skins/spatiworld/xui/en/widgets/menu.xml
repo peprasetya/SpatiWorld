@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<!-- SpatiWorld: menus are pointed at from a metre away, so their items are the bigger font. -->
+<menu name="menu"
+      bg_color="MenuDefaultBgColor"
+      bg_visible="true"
+      drop_shadow="true"
+      tear_off="false"
+      font="SansSerif"
+      shortcut_pad="18">
+</menu>

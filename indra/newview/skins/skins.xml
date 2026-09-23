@@ -2,6 +2,22 @@
   <array>
     <map>
       <key>name</key>
+      <string>SpatiWorld</string>
+      <key>folder</key>
+      <string>spatiworld</string>
+      <key>themes</key>
+      <array>
+        <map>
+          <key>name</key>
+          <string>Deep Glass</string>
+          <key>folder</key>
+          <string/>
+        </map>
+      </array>
+    </map>
+
+    <map>
+      <key>name</key>
       <string>AnsaStorm</string>
       <key>folder</key>
       <string>ansastorm</string>
