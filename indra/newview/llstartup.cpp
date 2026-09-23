@@ -28,6 +28,7 @@
 
 #include "llappviewer.h"
 #include "llstartup.h"
+#include "spatiandstereo.h"
 
 #if LL_VELOPACK && LL_WINDOWS
 #include "llvelopack.h"
@@ -3367,6 +3368,12 @@ bool idle_startup()
         // </FS:PP>
 
         LLStartUp::setStartupState( STATE_STARTED );
+
+        // Logged in and the world is up: only now ask whether spatiand is watching, and
+        // with how many eyes. Nothing before this point asks, so the login window stays
+        // the ordinary flat one whatever ends up in front of it.
+        SpatiandStereo::detect();
+
         do_startup_frame();
 
         // <FS:Ansariel> Draw Distance stepping; originally based on SpeedRez by Henri Beauchamp, licensed under LGPL

@@ -27,6 +27,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llviewerdisplay.h"
+#include "spatiandstereo.h"
 
 #include "fsyspath.h"
 #include "hexdump.h"
@@ -1716,7 +1717,12 @@ void swap()
     LL_PROFILE_GPU_ZONE("swap");
     if (gDisplaySwapBuffers)
     {
-        gViewerWindow->getWindow()->swapBuffers();
+        // Both eyes go into the one window before any of it is shown; swapping after the
+        // first would put a half-drawn frame in front of the wearer.
+        if (SpatiandStereo::isLastEye())
+        {
+            gViewerWindow->getWindow()->swapBuffers();
+        }
     }
     gDisplaySwapBuffers = true;
 }
