@@ -519,3 +519,7 @@ void LL_COORD_TYPE_SCREEN::convertFromCommon(const LLCoordCommon& from)
     LLCoordGL from_gl(from);
     LLWindow::instance_snapshot().begin()->convertCoords(from_gl, &self);
 }
+
+// <SpatiWorld> See LLWindow::sCursorMap.
+LLWindow::cursor_map_t LLWindow::sCursorMap = NULL;
+// </SpatiWorld>

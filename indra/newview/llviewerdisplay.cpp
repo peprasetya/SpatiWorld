@@ -1656,7 +1656,13 @@ void render_ui(F32 zoom_factor, int subfield)
         }
 // [/RLVa:KB]
         LLGLState::checkStates();
-        render_hud_attachments();
+        // <SpatiWorld> In two eyes the HUD goes onto the UI panel, with the rest of the UI.
+        const bool ui_panel = SpatiandStereo::isStereo();
+        if (!ui_panel)
+        {
+            render_hud_attachments();
+        }
+        // </SpatiWorld>
 
         LLGLState::checkStates();
 
@@ -1691,7 +1697,10 @@ void render_ui(F32 zoom_factor, int subfield)
         {
             LL_PROFILE_ZONE_NAMED_CATEGORY_UI("UI 2D"); //LL_RECORD_BLOCK_TIME(FTM_RENDER_UI_2D);
             LLHUDObject::renderAll();
-            render_ui_2d();
+            if (!ui_panel) // <SpatiWorld/>
+            {
+                render_ui_2d();
+            }
         }
         // <FS:Beq> FIRE-33239 - particles do not sie when UI is disabled
         if (!render_ui)
@@ -1700,6 +1709,23 @@ void render_ui(F32 zoom_factor, int subfield)
             LLHUDObject::renderAllForTimer();
         }
         // </FS:Beq>
+
+        // <SpatiWorld> The UI and HUD laid out once, in front of the aim, and put into each eye
+        // where it stands. Name tags and selection stay in the world, drawn per eye above.
+        if (ui_panel)
+        {
+            if (SpatiandStereo::beginUI())
+            {
+                render_hud_attachments();
+                if (render_ui)
+                {
+                    render_ui_2d();
+                }
+                SpatiandStereo::endUI();
+            }
+            SpatiandStereo::drawUI();
+        }
+        // </SpatiWorld>
 
         gViewerWindow->setup2DRender();
         gViewerWindow->updateDebugText();

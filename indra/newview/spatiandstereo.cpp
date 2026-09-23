@@ -33,6 +33,9 @@
 #include "llviewercamera.h"
 #include "llrendertarget.h"
 #include "llgl.h"
+#include "llrender.h"
+#include "llglslshader.h"
+#include "v3math.h"
 
 #include <cmath>
 #include <cstdio>
@@ -52,6 +55,21 @@ S32                   SpatiandStereo::sCurrentEye = SpatiandStereo::NO_EYE;
 F32                   SpatiandStereo::sEyeSeparation = 0.064f;
 const U8*             SpatiandStereo::sPoses = NULL;
 LLRenderTarget*       SpatiandStereo::sEyeTarget = NULL;
+LLRenderTarget*       SpatiandStereo::sUITarget = NULL;
+bool                  SpatiandStereo::sUIDrawn = false;
+bool                  SpatiandStereo::sFrameKnown = false;
+bool                  SpatiandStereo::sTurned = false;
+LLVector3             SpatiandStereo::sAimAt;
+LLVector3             SpatiandStereo::sAimLeft;
+LLVector3             SpatiandStereo::sAimUp;
+LLVector3             SpatiandStereo::sViewAt;
+LLVector3             SpatiandStereo::sViewLeft;
+LLVector3             SpatiandStereo::sViewUp;
+F32                   SpatiandStereo::sFrameView = 0.f;
+F32                   SpatiandStereo::sFrameAspect = 0.f;
+F32                   SpatiandStereo::sEyeProjection[16];
+F32                   SpatiandStereo::sEyeModelview[16];
+bool                  SpatiandStereo::sEyeMatricesKnown = false;
 U32                   SpatiandStereo::sRenderWidth = 0;
 U32                   SpatiandStereo::sRenderHeight = 0;
 U32                   SpatiandStereo::sAskedWidth = 0;
@@ -238,6 +256,9 @@ void SpatiandStereo::detect()
         LL_INFOS("Spatiand") << "drawing at the glasses' field of view: "
                              << (vertical * RAD_TO_DEG) << " degrees high, aspect " << aspect << LL_ENDL;
     }
+
+    // The pointer arrives where the wearer sees it; the UI is laid out where the avatar aims.
+    LLWindow::sCursorMap = &SpatiandStereo::mapCursor;
 
     // And say what this window has become: two eyes, side by side, and the room itself rather
     // than a window in it. spatiand-host passes it on; the session claims it on its side.
@@ -521,4 +542,195 @@ void SpatiandStereo::askForSize()
     LL_INFOS("Spatiand") << "asking for a window of " << width << "x" << height
                          << " to put two " << (width / 2) << "x" << height << " eyes in" << LL_ENDL;
     gViewerWindow->getWindow()->setSize(LLCoordWindow(width, height));
+}
+
+void SpatiandStereo::beginFrame()
+{
+    sTurned = false;
+    if (!isStereo())
+    {
+        return;
+    }
+    LLViewerCamera* camera = LLViewerCamera::getInstance();
+    sAimAt = camera->getAtAxis();
+    sAimLeft = camera->getLeftAxis();
+    sAimUp = camera->getUpAxis();
+    sViewAt = sAimAt;
+    sViewLeft = sAimLeft;
+    sViewUp = sAimUp;
+    turnByHead(sViewAt, sViewLeft, sViewUp);
+    sFrameView = camera->getView();
+    sFrameAspect = camera->getAspect();
+    camera->setAxes(sViewAt, sViewLeft, sViewUp);
+    sTurned = true;
+    sFrameKnown = true;
+}
+
+void SpatiandStereo::endFrame()
+{
+    if (!sTurned)
+    {
+        return;
+    }
+    sTurned = false;
+    LLViewerCamera* camera = LLViewerCamera::getInstance();
+    camera->setAxes(sAimAt, sAimLeft, sAimUp);
+    // And the matrices that code outside drawing projects through -- a floater opened beside
+    // an object, a drag -- to the aim's, from the middle of the head, as setPerspective builds
+    // them. Otherwise they would still be the last eye's, turned by the head.
+    glm::mat4 modelview(glm::make_mat4((GLfloat*) OGL_TO_CFR_ROTATION));
+    GLfloat transform[16];
+    camera->getOpenGLTransform(transform);
+    modelview *= glm::make_mat4(transform);
+    set_current_modelview(modelview);
+}
+
+bool SpatiandStereo::mapCursor(S32& x, S32& y, bool to_layout)
+{
+    if (!isStereo() || !sFrameKnown || !gViewerWindow)
+    {
+        return false;
+    }
+    const F32 width = (F32)gViewerWindow->getWindowWidthRaw();
+    const F32 height = (F32)gViewerWindow->getWindowHeightRaw();
+    if (width <= 0.f || height <= 0.f || sFrameView <= 0.f || sFrameAspect <= 0.f)
+    {
+        return false;
+    }
+    // A pixel is a direction through the field of view; the same direction, seen from the
+    // other frame, is the pixel wanted. Both frames share the field of view and the middle of
+    // the head, so this is a turn and nothing else -- which is also why a click past the edge
+    // of the panel still casts the right ray into the world.
+    const LLVector3& from_at   = to_layout ? sViewAt : sAimAt;
+    const LLVector3& from_left = to_layout ? sViewLeft : sAimLeft;
+    const LLVector3& from_up   = to_layout ? sViewUp : sAimUp;
+    const LLVector3& to_at     = to_layout ? sAimAt : sViewAt;
+    const LLVector3& to_left   = to_layout ? sAimLeft : sViewLeft;
+    const LLVector3& to_up     = to_layout ? sAimUp : sViewUp;
+    const F32 tan_v = tanf(sFrameView * 0.5f);
+    const F32 tan_h = tan_v * sFrameAspect;
+    // Window coordinates: x from the left, y from the top.
+    const F32 tx = (((F32)x + 0.5f) / width * 2.f - 1.f) * tan_h;
+    const F32 ty = (1.f - ((F32)y + 0.5f) / height * 2.f) * tan_v;
+    const LLVector3 direction = from_at - from_left * tx + from_up * ty;
+    const F32 along = direction * to_at;
+    if (along <= 1e-4f)
+    {
+        // Behind the other frame: there is no pixel of it there.
+        return false;
+    }
+    const F32 ux = -(direction * to_left) / along / tan_h;
+    const F32 uy = (direction * to_up) / along / tan_v;
+    x = ll_round((ux + 1.f) * 0.5f * width - 0.5f);
+    y = ll_round((1.f - uy) * 0.5f * height - 0.5f);
+    return true;
+}
+
+void SpatiandStereo::noteEyeMatrices(const F32* projection, const F32* modelview)
+{
+    if (!isStereo() || sCurrentEye == NO_EYE)
+    {
+        return;
+    }
+    memcpy(sEyeProjection, projection, sizeof(sEyeProjection));
+    memcpy(sEyeModelview, modelview, sizeof(sEyeModelview));
+    sEyeMatricesKnown = true;
+}
+
+bool SpatiandStereo::beginUI()
+{
+    // Once a frame: the panel is the same for both eyes, and drawing it twice would also run
+    // everything in the UI that counts frames twice (the HUD's zoom easing, for one).
+    if (!isStereo() || sCurrentEye > 0 || !gViewerWindow)
+    {
+        return false;
+    }
+    const U32 width = gViewerWindow->getWindowWidthRaw();
+    const U32 height = gViewerWindow->getWindowHeightRaw();
+    if (!sUITarget)
+    {
+        sUITarget = new LLRenderTarget();
+    }
+    if (sUITarget->getWidth() != width || sUITarget->getHeight() != height)
+    {
+        sUITarget->release();
+        // With depth, for the HUD attachments: they are objects, and sort by it.
+        if (!sUITarget->allocate(width, height, GL_RGBA, true))
+        {
+            LL_WARNS("Spatiand") << "could not make a " << width << "x" << height
+                                 << " target to lay the UI out in" << LL_ENDL;
+            return false;
+        }
+    }
+    sUITarget->bindTarget();
+    // Alpha written too: it is what lets the world show through wherever there is no UI.
+    gGL.setColorMask(true, true);
+    glClearColor(0.f, 0.f, 0.f, 0.f);
+    sUITarget->clear();
+    return true;
+}
+
+void SpatiandStereo::endUI()
+{
+    gGL.flush();
+    sUITarget->flush();
+    gGL.setColorMask(true, false);
+    sUIDrawn = true;
+}
+
+void SpatiandStereo::drawUI()
+{
+    if (!sUIDrawn || !sUITarget || !sEyeMatricesKnown || !sFrameKnown)
+    {
+        return;
+    }
+    // How far in front of the aim the panel stands. Its size follows, so it fills the aim's
+    // view exactly; the distance only decides where the eyes converge on it. Nearer is where a
+    // screen is read from; farther agrees better with spatiand's pointer, which is drawn at
+    // the depth of the room and is double against anything much nearer.
+    static LLCachedControl<F32> panel_distance(gSavedSettings, "SpatiWorldPanelDistance", 4.f);
+    const F32 PANEL_DISTANCE = llclamp((F32)panel_distance, 0.5f, 100.f);
+    const F32 tan_v = tanf(sFrameView * 0.5f);
+    const F32 tan_h = tan_v * sFrameAspect;
+    const LLVector3 centre = LLViewerCamera::getInstance()->getOrigin() + sAimAt * PANEL_DISTANCE;
+    const LLVector3 right = -sAimLeft * (PANEL_DISTANCE * tan_h);
+    const LLVector3 up = sAimUp * (PANEL_DISTANCE * tan_v);
+    const LLVector3 bottom_left = centre - right - up;
+    const LLVector3 bottom_right = centre + right - up;
+    const LLVector3 top_left = centre - right + up;
+    const LLVector3 top_right = centre + right + up;
+
+    gGL.matrixMode(LLRender::MM_PROJECTION);
+    gGL.pushMatrix();
+    gGL.loadMatrix(sEyeProjection);
+    gGL.matrixMode(LLRender::MM_MODELVIEW);
+    gGL.pushMatrix();
+    gGL.loadMatrix(sEyeModelview);
+
+    {
+        LLGLDepthTest no_depth(GL_FALSE, GL_FALSE);
+        LLGLDisable no_cull(GL_CULL_FACE);
+        LLGLEnable blend(GL_BLEND);
+        // What the UI drew into a clear target is already multiplied by its own alpha.
+        gGL.blendFunc(LLRender::BF_ONE, LLRender::BF_ONE_MINUS_SOURCE_ALPHA);
+        gUIProgram.bind();
+        gGL.getTexUnit(0)->bind(sUITarget);
+        gGL.getTexUnit(0)->setTextureFilteringOption(LLTexUnit::TFO_BILINEAR);
+        gGL.color4f(1.f, 1.f, 1.f, 1.f);
+        gGL.begin(LLRender::TRIANGLE_STRIP);
+        gGL.texCoord2f(0.f, 0.f); gGL.vertex3fv(bottom_left.mV);
+        gGL.texCoord2f(1.f, 0.f); gGL.vertex3fv(bottom_right.mV);
+        gGL.texCoord2f(0.f, 1.f); gGL.vertex3fv(top_left.mV);
+        gGL.texCoord2f(1.f, 1.f); gGL.vertex3fv(top_right.mV);
+        gGL.end();
+        gGL.flush();
+        gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
+        gUIProgram.unbind();
+        gGL.setSceneBlendType(LLRender::BT_ALPHA);
+    }
+
+    gGL.matrixMode(LLRender::MM_PROJECTION);
+    gGL.popMatrix();
+    gGL.matrixMode(LLRender::MM_MODELVIEW);
+    gGL.popMatrix();
 }

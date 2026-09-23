@@ -6613,6 +6613,17 @@
       <key>Value</key>
       <integer>1</integer>
     </map>
+    <key>SpatiWorldPanelDistance</key>
+    <map>
+      <key>Comment</key>
+      <string>In stereo, how far in front of the aim the UI panel (menus, floaters, HUD) stands, in metres. It always fills the view; this only sets the depth the eyes see it at.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>4.0</real>
+    </map>
     <key>SpatiWorldFlycamButton</key>
     <map>
       <key>Comment</key>

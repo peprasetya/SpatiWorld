@@ -48,6 +48,7 @@
 #include "llstreamingaudio.h"
 
 #include "llvoavatarself.h"
+#include "spatiandstereo.h"
 
 /////////////////////////////////////////////////////////
 const U32 FMODEX_DECODE_BUFFER_SIZE = 1000; // in milliseconds
@@ -579,12 +580,20 @@ void audio_update_listener()
         LLVector3 lpos_global_f;
         lpos_global_f.setVec(lpos_global);
 
+        // <SpatiWorld> The ears turn with the head, not with the aim the camera keeps between
+        // frames; see SpatiandStereo::beginFrame.
+        LLVector3 ear_at = LLViewerCamera::getInstance()->getAtAxis();
+        LLVector3 ear_left = LLViewerCamera::getInstance()->getLeftAxis();
+        LLVector3 ear_up = LLViewerCamera::getInstance()->getUpAxis();
+        SpatiandStereo::turnByHead(ear_at, ear_left, ear_up);
+        // </SpatiWorld>
+
         gAudiop->setListener(lpos_global_f,
                              // LLViewerCamera::getInstance()VelocitySmoothed,
                              // LLVector3::zero,
                              gAgent.getVelocity(),    // !!! *TODO: need to replace this with smoothed velocity!
-                             LLViewerCamera::getInstance()->getUpAxis(),
-                             LLViewerCamera::getInstance()->getAtAxis());
+                             ear_up,
+                             ear_at);
     }
 }
 

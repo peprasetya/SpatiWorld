@@ -59,6 +59,15 @@ public:
     {
         // currently unused
     };
+
+    // <SpatiWorld> Where the pointer is, as the viewer lays things out rather than as the
+    // window shows them. Null for an ordinary window: a pixel under the pointer is a pixel of
+    // the layout. A viewer that shows something else -- its UI turned away from where it was
+    // laid out, say -- sets this to map between the two. Window coordinates both ways;
+    // to_layout false maps back, for moving the pointer. False leaves them as they were.
+    typedef bool (*cursor_map_t)(S32& x, S32& y, bool to_layout);
+    static cursor_map_t sCursorMap;
+    // </SpatiWorld>
 public:
     virtual void show() = 0;
     virtual void hide() = 0;
