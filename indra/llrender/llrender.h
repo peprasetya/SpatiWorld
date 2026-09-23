@@ -490,6 +490,10 @@ public:
     static U32 sUICalls;
     static U32 sUIVerts;
     static bool sGLCoreProfile;
+    // <SpatiWorld> Drawing into a layer that is itself blended later, so its alpha has to come
+    // out as coverage: while set, the ordinary alpha blend accumulates alpha as "over" does
+    // (a + d*(1-a)) instead of squaring it. The UI panel of the stereo viewer is such a layer.
+    static bool sLayerAlpha;
     static bool sNsightDebugSupport;
     static LLVector2 sUIGLScaleFactor;
     static bool sClassicMode; // classic sky mode active

@@ -25,6 +25,7 @@
 #define SPATIANDSTEREO_H
 
 #include "stdtypes.h"
+#include "llrect.h"
 
 #include <cstddef>
 
@@ -56,6 +57,23 @@ public:
     // Only side-by-side is drawn so far. Top/bottom is a value the protocol has and this
     // viewer does not yet honour, so it stays one eye rather than drawing the wrong thing.
     static bool isStereo() { return sEyes == EYES_SIDE_BY_SIDE; }
+
+    // **The canvas: more room than the view.** In stereo the viewer lays itself out on a
+    // canvas larger than one eye -- SpatiWorldCanvasWidth by SpatiWorldCanvasHeight views --
+    // and the world is drawn in the view-sized box in its middle. Menus, the menu bar, the
+    // toolbars and dialogs are kept in the box, where they cannot be lost; floaters and HUD
+    // attachments may be put anywhere on the canvas, around the view, to be looked at by
+    // turning the head. The whole canvas is the UI panel set in front of the aim.
+    //
+    // Given the size of one eye, the size to lay out in. Remembers the eye.
+    static void canvasFor(S32 eye_width, S32 eye_height, S32& width, S32& height);
+    // The box the world is drawn in, in raw canvas pixels.
+    static LLRect boxRaw(const LLRect& canvas_raw);
+    // Keep the box's chrome in the box and let the floaters out of it. After every reshape.
+    static void arrangeCanvas();
+    // HUD attachments are laid out for the box; drawn on the whole canvas they keep their
+    // size and place, and may be moved out past its edges.
+    static void fitHudToCanvas();
 
     static S32 eyeCount() { return isStereo() ? 2 : 1; }
     // Which eye is being drawn: 0 left, 1 right, NO_EYE between passes. Between passes the
@@ -123,6 +141,12 @@ public:
     static bool beginUI();
     static void endUI();
     static void drawUI();
+    // **The pointer, drawn here and at its depth.** spatiand knows which way the pointer points
+    // and nothing about how far away the thing under it is; this viewer knows both. So it asks
+    // spatiand not to draw its reticle over the room (set_cursor_drawn) and draws its own, per
+    // eye: on the panel when the pointer is over the UI, on whatever the pointer rests on in the
+    // world otherwise, and far off over the sky.
+    static void drawCursor();
     // The eye's own matrices, as LLViewerCamera::setPerspective made them, to draw the panel with.
     static void noteEyeMatrices(const F32* projection, const F32* modelview);
 
@@ -150,6 +174,13 @@ private:
     static void mapPoses();
     static LLRenderTarget* sEyeTarget;
     static LLRenderTarget* sUITarget;
+    static S32 sEyeWidth;
+    static S32 sEyeHeight;
+    // The box on the canvas, as it was when this frame began; while the eyes are drawn the
+    // world view is moved to the origin, and this is where it really is.
+    static LLRect sBoxRaw;
+    // Whether the UI covers the pixel under the pointer, read back when the panel is drawn.
+    static bool sPointerOnUI;
     static bool sUIDrawn;
     // The aim and the view this frame was drawn with, and its field of view.
     static bool sFrameKnown;

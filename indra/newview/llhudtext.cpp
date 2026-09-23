@@ -27,6 +27,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llhudtext.h"
+#include "spatiandstereo.h"
 
 #include "llrender.h"
 
@@ -133,7 +134,9 @@ void LLHUDText::render()
         // So it turns out when the LLGLDepthTest object goes out of scope, it reverts back
         // to the previous state. So by having the LLGLDepthTest in the if statements, they were
         // never applied.
-        LLGLDepthTest gls_depth(mbUseHoverHighlight && mbIsHighlighted ? GL_FALSE : GL_TRUE, GL_FALSE);
+        // <SpatiWorld> No depth test in stereo: the text is at its object's depth now, not pulled
+        // in front of it, and would otherwise be hidden inside it.
+        LLGLDepthTest gls_depth((mbUseHoverHighlight && mbIsHighlighted) || SpatiandStereo::isStereo() ? GL_FALSE : GL_TRUE, GL_FALSE);
         // </FS:minerjr> [FIRE-35019] </FS:minerjr> [FIRE-35102]	
         //LLGLDisable gls_stencil(GL_STENCIL_TEST);
         renderText();
@@ -505,6 +508,19 @@ void LLHUDText::updateVisibility()
         return;
     }
 
+    // <SpatiWorld> In stereo the text stays at its object's depth, on top of it. Pushed toward
+    // the camera by the object's radius it floats in front of the object, and for anything
+    // larger than its distance it is pinned to the near plane, right in front of the eyes.
+    if (SpatiandStereo::isStereo())
+    {
+        if (vec_from_camera * LLViewerCamera::getInstance()->getAtAxis() <= LLViewerCamera::getInstance()->getNear() + 0.1f)
+        {
+            mVisible = false;
+            return;
+        }
+    }
+    else
+    // </SpatiWorld>
     if (vec_from_camera * LLViewerCamera::getInstance()->getAtAxis() <= LLViewerCamera::getInstance()->getNear() + 0.1f + mSourceObject->getVObjRadius())
     {
         mPositionAgent = LLViewerCamera::getInstance()->getOrigin() + vec_from_camera * ((LLViewerCamera::getInstance()->getNear() + 0.1f) / (vec_from_camera * LLViewerCamera::getInstance()->getAtAxis()));

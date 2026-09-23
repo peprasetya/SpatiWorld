@@ -28,6 +28,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llhudnametag.h"
+#include "spatiandstereo.h"
 
 #include "llrender.h"
 #include "lltracerecording.h"
@@ -228,7 +229,7 @@ void LLHUDNameTag::render()
     LL_PROFILE_ZONE_SCOPED_CATEGORY_UI;
     if (sDisplayText)
     {
-        LLGLDepthTest gls_depth(GL_TRUE, GL_FALSE);
+        LLGLDepthTest gls_depth(SpatiandStereo::isStereo() ? GL_FALSE : GL_TRUE, GL_FALSE); // <SpatiWorld/> see LLVOAvatar::idleCalcNameTagPosition
         renderText();
     }
 }
@@ -292,7 +293,7 @@ void LLHUDNameTag::renderText()
             + (x_pixel_vec * screen_offset.mV[VX])
             + (y_pixel_vec * screen_offset.mV[VY]);
 
-    LLGLDepthTest gls_depth(GL_TRUE, GL_FALSE);
+    LLGLDepthTest gls_depth(SpatiandStereo::isStereo() ? GL_FALSE : GL_TRUE, GL_FALSE); // <SpatiWorld/> see LLVOAvatar::idleCalcNameTagPosition
     LLRect screen_rect;
     screen_rect.setCenterAndSize(0, static_cast<S32>(lltrunc(-mHeight / 2 + mOffsetY)), static_cast<S32>(lltrunc(mWidth)), static_cast<S32>(lltrunc(mHeight)));
     mRoundedRectImgp->draw3D(render_position, x_pixel_vec, y_pixel_vec, screen_rect, bg_color);

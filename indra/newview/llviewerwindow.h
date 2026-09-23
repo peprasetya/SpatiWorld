@@ -256,6 +256,9 @@ public:
     //
     LLRootView*         getRootView()       const;
     MainPanel*          getMainView()       const { return mMainView; }
+    // <SpatiWorld> Where the world is drawn, for the duration of the stereo eye passes only;
+    // see SpatiandStereo::beginFrame. No signals: nothing is laid out again for it.
+    void                setWorldViewRectRawForDrawing(const LLRect& raw) { mWorldViewRectRaw = raw; mWorldViewRectScaled = calcScaledRect(raw, mDisplayScale); }
 
     // 3D world area in scaled pixels (via UI scale), use for most UI computations
     LLRect          getWorldViewRectScaled() const;

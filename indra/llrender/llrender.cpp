@@ -54,6 +54,7 @@ thread_local LLRender gGL;
 // Handy copies of last good GL matrices
 F32 gGLModelView[16];
 F32 gGLLastModelView[16];
+bool LLRender::sLayerAlpha = false; // <SpatiWorld/>
 F32 gGLLastProjection[16];
 F32 gGLProjection[16];
 
@@ -1439,6 +1440,13 @@ void LLRender::blendFunc(eBlendFactor sfactor, eBlendFactor dfactor)
 {
     llassert(sfactor < BF_UNDEF);
     llassert(dfactor < BF_UNDEF);
+    // <SpatiWorld> See LLRender::sLayerAlpha.
+    if (sLayerAlpha && sfactor == BF_SOURCE_ALPHA && dfactor == BF_ONE_MINUS_SOURCE_ALPHA)
+    {
+        blendFunc(sfactor, dfactor, BF_ONE, BF_ONE_MINUS_SOURCE_ALPHA);
+        return;
+    }
+    // </SpatiWorld>
     if (mCurrBlendColorSFactor != sfactor || mCurrBlendColorDFactor != dfactor ||
         mCurrBlendAlphaSFactor != sfactor || mCurrBlendAlphaDFactor != dfactor)
     {

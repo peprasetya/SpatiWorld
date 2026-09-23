@@ -522,4 +522,5 @@ void LL_COORD_TYPE_SCREEN::convertFromCommon(const LLCoordCommon& from)
 
 // <SpatiWorld> See LLWindow::sCursorMap.
 LLWindow::cursor_map_t LLWindow::sCursorMap = NULL;
+S32 LLWindow::sLayoutHeight = 0;
 // </SpatiWorld>

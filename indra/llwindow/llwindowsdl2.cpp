@@ -1517,7 +1517,7 @@ bool LLWindowSDL::convertCoords(LLCoordGL from, LLCoordWindow *to)
         return false;
 
     to->mX = from.mX;
-    to->mY = mSurface->h - from.mY - 1;
+    to->mY = (sLayoutHeight > 0 ? sLayoutHeight : mSurface->h) - from.mY - 1; // <SpatiWorld/>
 
     return true;
 }
@@ -1528,7 +1528,7 @@ bool LLWindowSDL::convertCoords(LLCoordWindow from, LLCoordGL* to)
         return false;
 
     to->mX = from.mX;
-    to->mY = mSurface->h - from.mY - 1;
+    to->mY = (sLayoutHeight > 0 ? sLayoutHeight : mSurface->h) - from.mY - 1; // <SpatiWorld/>
 
     return true;
 }

@@ -67,6 +67,9 @@ public:
     // to_layout false maps back, for moving the pointer. False leaves them as they were.
     typedef bool (*cursor_map_t)(S32& x, S32& y, bool to_layout);
     static cursor_map_t sCursorMap;
+    // The height the viewer lays itself out in, when that is not the window's own: window
+    // coordinates count from its top, and GL coordinates from its bottom. Zero for the window.
+    static S32 sLayoutHeight;
     // </SpatiWorld>
 public:
     virtual void show() = 0;

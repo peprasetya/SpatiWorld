@@ -136,6 +136,7 @@
 #include "llsidepanelappearance.h"
 #include "llviewermenufile.h"
 #include "llviewernetwork.h"    // [FS:CR] isInSecondlife()
+#include "spatiandstereo.h"
 
 
 extern F32 SPEED_ADJUST_MAX;
@@ -4573,6 +4574,22 @@ LLVector3 LLVOAvatar::idleCalcNameTagPosition(const LLVector3 &root_pos_last)
     static LLCachedControl<S32> fsNameTagOffset(gSavedSettings, "FSNameTagZOffsetCorrection");
     name_position[VZ] += fsNameTagOffset / 10.f;
     // </FS:Ansariel>
+
+    // <SpatiWorld> In stereo the tag is seen at a depth, and the one above was pulled toward the
+    // camera onto the front of an ellipsoid around the avatar -- more than a metre, from a
+    // camera looking down -- so the wearer saw it float in front of the avatar. Same place on
+    // screen, but back along its line of sight to as far away as the head.
+    if (SpatiandStereo::isStereo() && mHeadp)
+    {
+        const LLVector3 origin = LLViewerCamera::getInstance()->getOrigin();
+        const F32 tag_distance = (name_position - origin).magVec();
+        const F32 head_distance = (mHeadp->getWorldPosition() - origin).magVec();
+        if (tag_distance > 0.1f && head_distance > tag_distance)
+        {
+            name_position = origin + (name_position - origin) * (head_distance / tag_distance);
+        }
+    }
+    // </SpatiWorld>
 
     // Avoid of crossing the name tag by the water surface
     if (mNameText)

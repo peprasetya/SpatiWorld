@@ -35,6 +35,12 @@
 #include "llgl.h"
 #include "llrender.h"
 #include "llglslshader.h"
+#include "llfloater.h"
+#include "lltoolpie.h"
+#include "llagent.h"
+#include "llviewertexture.h"
+#include "llframetimer.h"
+#include "llview.h"
 #include "v3math.h"
 
 #include <cmath>
@@ -56,6 +62,10 @@ F32                   SpatiandStereo::sEyeSeparation = 0.064f;
 const U8*             SpatiandStereo::sPoses = NULL;
 LLRenderTarget*       SpatiandStereo::sEyeTarget = NULL;
 LLRenderTarget*       SpatiandStereo::sUITarget = NULL;
+S32                   SpatiandStereo::sEyeWidth = 0;
+S32                   SpatiandStereo::sEyeHeight = 0;
+LLRect                SpatiandStereo::sBoxRaw;
+bool                  SpatiandStereo::sPointerOnUI = false;
 bool                  SpatiandStereo::sUIDrawn = false;
 bool                  SpatiandStereo::sFrameKnown = false;
 bool                  SpatiandStereo::sTurned = false;
@@ -244,6 +254,16 @@ void SpatiandStereo::detect()
     // two eyes of the size this viewer was already drawing.
     listen();
     askForSize();
+    // And lay out for two eyes now, whether or not the window changes size: a window that is
+    // already the size asked for -- the last session's, remembered -- sends no resize, and
+    // without one the viewer would go on believing the whole double-width window is one eye.
+    {
+        LLCoordWindow size;
+        if (gViewerWindow->getWindow()->getSize(&size))
+        {
+            gViewerWindow->handleResize(gViewerWindow->getWindow(), size.mX, size.mY);
+        }
+    }
 
     // The glasses' own field of view, told to the simulator once. It decides what the region
     // sends, and a viewer that claims SL's sixty degrees while showing the glasses' thirty
@@ -264,6 +284,7 @@ void SpatiandStereo::detect()
     // than a window in it. spatiand-host passes it on; the session claims it on its side.
     tell("set_eye_layout side_by_side");
     tell("set_layer projection");
+    tell("set_cursor_drawn 1");
 }
 
 void SpatiandStereo::tell(const char* message)
@@ -425,8 +446,8 @@ void SpatiandStereo::beginEye()
     {
         return;
     }
-    const U32 width = gViewerWindow->getWindowWidthRaw();
-    const U32 height = gViewerWindow->getWindowHeightRaw();
+    const U32 width = gViewerWindow->getWorldViewWidthRaw();
+    const U32 height = gViewerWindow->getWorldViewHeightRaw();
     if (!sEyeTarget)
     {
         sEyeTarget = new LLRenderTarget();
@@ -456,14 +477,17 @@ void SpatiandStereo::endEye()
     {
         return;
     }
-    const S32 width = sEyeTarget->getWidth();
-    const S32 height = sEyeTarget->getHeight();
     sEyeTarget->flush();
+    // The eye was drawn at the origin; see beginFrame.
+    const LLRect box = gViewerWindow->getWorldViewRectRaw();
+    const S32 width = box.getWidth();
+    const S32 height = box.getHeight();
     // Into its half of the window: the left eye at the left edge, the right one beside it.
     const S32 x = sCurrentEye > 0 ? width : 0;
     glBindFramebuffer(GL_READ_FRAMEBUFFER, sEyeTarget->getFBO());
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(0, 0, width, height, x, 0, x + width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBlitFramebuffer(box.mLeft, box.mBottom, box.mRight, box.mTop, x, 0, x + width, height,
+                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -562,6 +586,13 @@ void SpatiandStereo::beginFrame()
     sFrameView = camera->getView();
     sFrameAspect = camera->getAspect();
     camera->setAxes(sViewAt, sViewLeft, sViewUp);
+    // **The world is drawn at the origin.** Its place is the box in the middle of the canvas,
+    // and that is where layout, picking and the pointer find it. But the renderer's passes do
+    // not all honour a world view that is not at 0,0 -- post effects land at the corner and the
+    // box shows half a world -- so for the eye passes the world view is an eye-sized rect at
+    // the origin of an eye-sized target, which is exactly what the renderer was built for.
+    sBoxRaw = gViewerWindow->getWorldViewRectRaw();
+    gViewerWindow->setWorldViewRectRawForDrawing(LLRect(0, sBoxRaw.getHeight(), sBoxRaw.getWidth(), 0));
     sTurned = true;
     sFrameKnown = true;
 }
@@ -573,6 +604,7 @@ void SpatiandStereo::endFrame()
         return;
     }
     sTurned = false;
+    gViewerWindow->setWorldViewRectRawForDrawing(sBoxRaw);
     LLViewerCamera* camera = LLViewerCamera::getInstance();
     camera->setAxes(sAimAt, sAimLeft, sAimUp);
     // And the matrices that code outside drawing projects through -- a floater opened beside
@@ -591,11 +623,23 @@ bool SpatiandStereo::mapCursor(S32& x, S32& y, bool to_layout)
     {
         return false;
     }
-    const F32 width = (F32)gViewerWindow->getWindowWidthRaw();
-    const F32 height = (F32)gViewerWindow->getWindowHeightRaw();
+    // The view is one eye; the layout is the canvas, with the aim's view in its box.
+    const LLRect box = gViewerWindow->getWorldViewRectRaw();
+    const F32 width = (F32)box.getWidth();
+    const F32 height = (F32)box.getHeight();
+    const F32 canvas_height = (F32)gViewerWindow->getWindowHeightRaw();
     if (width <= 0.f || height <= 0.f || sFrameView <= 0.f || sFrameAspect <= 0.f)
     {
         return false;
+    }
+    // Where the box's top-left is in the canvas, in window coordinates (from the top).
+    const F32 box_x = (F32)box.mLeft;
+    const F32 box_y = canvas_height - (F32)box.mTop;
+    if (!to_layout)
+    {
+        // Canvas to box first; the turn below then takes it to the view.
+        x = ll_round((F32)x - box_x);
+        y = ll_round((F32)y - box_y);
     }
     // A pixel is a direction through the field of view; the same direction, seen from the
     // other frame, is the pixel wanted. Both frames share the field of view and the middle of
@@ -623,6 +667,12 @@ bool SpatiandStereo::mapCursor(S32& x, S32& y, bool to_layout)
     const F32 uy = (direction * to_up) / along / tan_v;
     x = ll_round((ux + 1.f) * 0.5f * width - 0.5f);
     y = ll_round((1.f - uy) * 0.5f * height - 0.5f);
+    if (to_layout)
+    {
+        // Box to canvas.
+        x = ll_round((F32)x + box_x);
+        y = ll_round((F32)y + box_y);
+    }
     return true;
 }
 
@@ -663,8 +713,11 @@ bool SpatiandStereo::beginUI()
         }
     }
     sUITarget->bindTarget();
-    // Alpha written too: it is what lets the world show through wherever there is no UI.
+    // Alpha written too, and accumulated as coverage: it is what lets the world show through
+    // wherever there is no UI, and only there -- an opaque floater has to stay opaque.
     gGL.setColorMask(true, true);
+    LLRender::sLayerAlpha = true;
+    gGL.setSceneBlendType(LLRender::BT_ALPHA);
     glClearColor(0.f, 0.f, 0.f, 0.f);
     sUITarget->clear();
     return true;
@@ -673,6 +726,22 @@ bool SpatiandStereo::beginUI()
 void SpatiandStereo::endUI()
 {
     gGL.flush();
+    // Is there UI under the pointer? One pixel, read while the panel's target is still bound:
+    // the cursor goes on the panel if so, into the world if not.
+    {
+        const LLCoordGL mouse = gViewerWindow->getCurrentMouse();
+        const S32 x = ll_round(mouse.mX * gViewerWindow->getDisplayScale().mV[VX]);
+        const S32 y = ll_round(mouse.mY * gViewerWindow->getDisplayScale().mV[VY]);
+        sPointerOnUI = false;
+        if (x >= 0 && y >= 0 && x < (S32)sUITarget->getWidth() && y < (S32)sUITarget->getHeight())
+        {
+            U8 pixel[4] = { 0, 0, 0, 0 };
+            glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
+            sPointerOnUI = pixel[3] > 24;
+        }
+    }
+    LLRender::sLayerAlpha = false;
+    gGL.setSceneBlendType(LLRender::BT_ALPHA);
     sUITarget->flush();
     gGL.setColorMask(true, false);
     sUIDrawn = true;
@@ -685,20 +754,32 @@ void SpatiandStereo::drawUI()
         return;
     }
     // How far in front of the aim the panel stands. Its size follows, so it fills the aim's
-    // view exactly; the distance only decides where the eyes converge on it. Nearer is where a
-    // screen is read from; farther agrees better with spatiand's pointer, which is drawn at
-    // the depth of the room and is double against anything much nearer.
-    static LLCachedControl<F32> panel_distance(gSavedSettings, "SpatiWorldPanelDistance", 4.f);
+    // view exactly; the distance only decides where the eyes converge on it -- nearer than the
+    // avatar, so the UI is never seen behind what it is about.
+    static LLCachedControl<F32> panel_distance(gSavedSettings, "SpatiWorldPanelDistance", 1.5f);
     const F32 PANEL_DISTANCE = llclamp((F32)panel_distance, 0.5f, 100.f);
     const F32 tan_v = tanf(sFrameView * 0.5f);
     const F32 tan_h = tan_v * sFrameAspect;
+    // The canvas's edges as tangents of the aim's view: the box spans -1..1 of it, and the
+    // canvas reaches past that by however much bigger it is.
+    const LLRect box = sBoxRaw;
+    const F32 canvas_w = (F32)gViewerWindow->getWindowWidthRaw();
+    const F32 canvas_h = (F32)gViewerWindow->getWindowHeightRaw();
+    if (box.getWidth() <= 0 || box.getHeight() <= 0)
+    {
+        return;
+    }
+    const F32 left_t   = ((0.f - box.mLeft) / box.getWidth() * 2.f - 1.f) * tan_h;
+    const F32 right_t  = ((canvas_w - box.mLeft) / box.getWidth() * 2.f - 1.f) * tan_h;
+    const F32 bottom_t = ((0.f - box.mBottom) / box.getHeight() * 2.f - 1.f) * tan_v;
+    const F32 top_t    = ((canvas_h - box.mBottom) / box.getHeight() * 2.f - 1.f) * tan_v;
     const LLVector3 centre = LLViewerCamera::getInstance()->getOrigin() + sAimAt * PANEL_DISTANCE;
-    const LLVector3 right = -sAimLeft * (PANEL_DISTANCE * tan_h);
-    const LLVector3 up = sAimUp * (PANEL_DISTANCE * tan_v);
-    const LLVector3 bottom_left = centre - right - up;
-    const LLVector3 bottom_right = centre + right - up;
-    const LLVector3 top_left = centre - right + up;
-    const LLVector3 top_right = centre + right + up;
+    const LLVector3 right = -sAimLeft * PANEL_DISTANCE;
+    const LLVector3 up = sAimUp * PANEL_DISTANCE;
+    const LLVector3 bottom_left = centre + right * left_t + up * bottom_t;
+    const LLVector3 bottom_right = centre + right * right_t + up * bottom_t;
+    const LLVector3 top_left = centre + right * left_t + up * top_t;
+    const LLVector3 top_right = centre + right * right_t + up * top_t;
 
     gGL.matrixMode(LLRender::MM_PROJECTION);
     gGL.pushMatrix();
@@ -729,6 +810,251 @@ void SpatiandStereo::drawUI()
         gGL.setSceneBlendType(LLRender::BT_ALPHA);
     }
 
+    gGL.matrixMode(LLRender::MM_PROJECTION);
+    gGL.popMatrix();
+    gGL.matrixMode(LLRender::MM_MODELVIEW);
+    gGL.popMatrix();
+}
+
+void SpatiandStereo::canvasFor(S32 eye_width, S32 eye_height, S32& width, S32& height)
+{
+    sEyeWidth = eye_width;
+    sEyeHeight = eye_height;
+    static LLCachedControl<F32> canvas_width(gSavedSettings, "SpatiWorldCanvasWidth", 2.f);
+    static LLCachedControl<F32> canvas_height(gSavedSettings, "SpatiWorldCanvasHeight", 1.6f);
+    // Even margins, so the box sits exactly in the middle.
+    width = eye_width + 2 * ll_round(eye_width * (llclamp((F32)canvas_width, 1.f, 4.f) - 1.f) * 0.5f);
+    height = eye_height + 2 * ll_round(eye_height * (llclamp((F32)canvas_height, 1.f, 4.f) - 1.f) * 0.5f);
+    LLWindow::sLayoutHeight = height;
+}
+
+LLRect SpatiandStereo::boxRaw(const LLRect& canvas_raw)
+{
+    if (sEyeWidth <= 0 || sEyeHeight <= 0)
+    {
+        // No eye yet: the window has not been through handleResize in stereo.
+        return canvas_raw;
+    }
+    const S32 width = llmin(sEyeWidth, canvas_raw.getWidth());
+    const S32 height = llmin(sEyeHeight, canvas_raw.getHeight());
+    const S32 left = canvas_raw.mLeft + (canvas_raw.getWidth() - width) / 2;
+    const S32 bottom = canvas_raw.mBottom + (canvas_raw.getHeight() - height) / 2;
+    return LLRect(left, bottom + height, left + width, bottom);
+}
+
+void SpatiandStereo::arrangeCanvas()
+{
+    if (!isStereo() || !gViewerWindow || sEyeWidth <= 0)
+    {
+        return;
+    }
+    LLView* main_view = gViewerWindow->getMainView();
+    if (!main_view)
+    {
+        return;
+    }
+    const LLRect canvas = main_view->getLocalRect();
+    const LLRect box = LLViewerWindow::calcScaledRect(boxRaw(gViewerWindow->getWindowRectRaw()),
+                                                      gViewerWindow->getDisplayScale());
+
+    // What must never be lost goes in the box: the menu bar, the world's panel with its
+    // toolbars and chat bar, the navigation bar, and anywhere a menu can open.
+    static const char* in_box[] = { "menu_stack", "Menu Holder" };
+    for (const char* name : in_box)
+    {
+        if (LLView* view = main_view->findChildView(name, false))
+        {
+            view->setFollows(FOLLOWS_NONE);
+            view->setShape(box);
+        }
+    }
+    if (LLView* nav = main_view->findChildView("navigation_bar", false))
+    {
+        // Where the default layout has it: under the menu bar, the width of the view.
+        LLRect rect = nav->getRect();
+        const S32 height = rect.getHeight();
+        rect.setLeftTopAndSize(box.mLeft, box.mTop - 19, box.getWidth(), height);
+        nav->setFollows(FOLLOWS_NONE);
+        nav->setShape(rect);
+    }
+    if (LLView* mini = main_view->findChildView("progress_view_mini", false))
+    {
+        LLRect rect = mini->getRect();
+        rect.setLeftTopAndSize(box.getCenterX() - rect.getWidth() / 2, box.mBottom + 78,
+                               rect.getWidth(), rect.getHeight());
+        mini->setFollows(FOLLOWS_NONE);
+        mini->setShape(rect);
+    }
+
+    // The floaters get the whole canvas. Their view lives inside the world's panel, which
+    // clips to the box, so it is lifted out onto the main view -- above the toolbars, below
+    // everything that has to stay on top of a floater.
+    if (gFloaterView)
+    {
+        if (gFloaterView->getParent() != main_view)
+        {
+            if (LLView* parent = gFloaterView->getParent())
+            {
+                parent->removeChild(gFloaterView);
+            }
+            main_view->addChild(gFloaterView);
+            static const char* above_floaters[] = {
+                "snapshot_floater_view_holder", "popup_holder", "hint_holder", "progress_view",
+                "progress_view_mini", "Menu Holder", "tooltip view" };
+            for (const char* name : above_floaters)
+            {
+                if (LLView* view = main_view->findChildView(name, false))
+                {
+                    main_view->sendChildToFront(view);
+                }
+            }
+            LL_INFOS("Spatiand") << "floaters may go anywhere on a " << canvas.getWidth() << "x"
+                                 << canvas.getHeight() << " canvas; the view is the "
+                                 << box.getWidth() << "x" << box.getHeight() << " in its middle"
+                                 << LL_ENDL;
+        }
+        gFloaterView->setFollowsAll();
+        gFloaterView->setShape(canvas);
+    }
+}
+
+void SpatiandStereo::fitHudToCanvas()
+{
+    if (!isStereo() || !gViewerWindow)
+    {
+        return;
+    }
+    const LLRect box = sBoxRaw;
+    const F32 canvas_w = (F32)gViewerWindow->getWindowWidthRaw();
+    const F32 canvas_h = (F32)gViewerWindow->getWindowHeightRaw();
+    if (box.getWidth() <= 0 || box.getHeight() <= 0 || canvas_w <= 0.f || canvas_h <= 0.f)
+    {
+        return;
+    }
+    // The HUD's projection fills whatever viewport it gets; the viewport is the canvas, so
+    // shrink it to where the box is on the canvas, and everything past the box's edges is
+    // simply more of the same space.
+    const F32 sx = box.getWidth() / canvas_w;
+    const F32 sy = box.getHeight() / canvas_h;
+    const F32 cx = (box.getCenterX() / canvas_w) * 2.f - 1.f;
+    const F32 cy = (box.getCenterY() / canvas_h) * 2.f - 1.f;
+    glm::mat4 fit = glm::translate(glm::vec3(cx, cy, 0.f)) * glm::scale(glm::vec3(sx, sy, 1.f));
+    glm::mat4 proj = fit * get_current_projection();
+    gGL.matrixMode(LLRender::MM_PROJECTION);
+    gGL.loadMatrix(glm::value_ptr(proj));
+    set_current_projection(proj);
+    gGL.matrixMode(LLRender::MM_MODELVIEW);
+    glViewport(0, 0, (GLsizei)canvas_w, (GLsizei)canvas_h);
+}
+
+void SpatiandStereo::drawCursor()
+{
+    if (!isStereo() || !sEyeMatricesKnown || !sFrameKnown || !gViewerWindow)
+    {
+        return;
+    }
+    // Only while the pointer is in use. spatiand's own reticle fades the same way, and a
+    // cursor left where the pointer last was, after the wearer has moved on to another
+    // window, would be a second pointer that means nothing.
+    static LLCoordGL last_mouse;
+    static LLFrameTimer since_moved;
+    const LLCoordGL mouse = gViewerWindow->getCurrentMouse();
+    if (mouse.mX != last_mouse.mX || mouse.mY != last_mouse.mY)
+    {
+        last_mouse = mouse;
+        since_moved.reset();
+    }
+    const F32 idle = since_moved.getElapsedTimeF32();
+    const F32 fade = idle < 3.f ? 1.f : llmax(0.f, 1.f - (idle - 3.f) / 0.5f);
+    if (fade <= 0.f)
+    {
+        return;
+    }
+
+    // The pointer's direction: its place on the canvas, through the box, as a direction of
+    // the aim's view -- the same turn that put the panel there.
+    const LLRect box = sBoxRaw;
+    if (box.getWidth() <= 0 || box.getHeight() <= 0)
+    {
+        return;
+    }
+    const F32 px = mouse.mX * gViewerWindow->getDisplayScale().mV[VX];
+    const F32 py = mouse.mY * gViewerWindow->getDisplayScale().mV[VY];
+    const F32 tan_v = tanf(sFrameView * 0.5f);
+    const F32 tan_h = tan_v * sFrameAspect;
+    const F32 tx = ((px - box.mLeft) / box.getWidth() * 2.f - 1.f) * tan_h;
+    const F32 ty = ((py - box.mBottom) / box.getHeight() * 2.f - 1.f) * tan_v;
+    // Along the aim this is one unit, so it lands on the panel's plane when scaled by its
+    // distance.
+    const LLVector3 along = sAimAt - sAimLeft * tx + sAimUp * ty;
+    const LLVector3 origin = LLViewerCamera::getInstance()->getOrigin();
+
+    static LLCachedControl<F32> panel_distance(gSavedSettings, "SpatiWorldPanelDistance", 1.5f);
+    LLVector3 point;
+    if (sPointerOnUI)
+    {
+        point = origin + along * llclamp((F32)panel_distance, 0.5f, 100.f);
+    }
+    else
+    {
+        LLVector3 direction = along;
+        direction.normVec();
+        F32 distance = 50.f;
+        const LLPickInfo& hover = LLToolPie::getInstance()->getHoverPick();
+        if (hover.isValid() && hover.mPickType != LLPickInfo::PICK_INVALID)
+        {
+            const LLVector3 hit = gAgent.getPosAgentFromGlobal(hover.mPosGlobal);
+            const F32 hit_distance = (hit - origin).magVec();
+            if (hit_distance > 0.1f)
+            {
+                distance = hit_distance;
+            }
+        }
+        point = origin + direction * distance;
+    }
+
+    // Facing the camera, a constant angular size: a ring with a dark edge, readable on snow
+    // and on night sky alike, and a dot in the middle for the exact spot.
+    const F32 distance = (point - origin).magVec();
+    const F32 radius = distance * tanf(0.9f * DEG_TO_RAD);
+    const LLVector3 right = -LLViewerCamera::getInstance()->getLeftAxis() * radius;
+    const LLVector3 up = LLViewerCamera::getInstance()->getUpAxis() * radius;
+
+    gGL.matrixMode(LLRender::MM_PROJECTION);
+    gGL.pushMatrix();
+    gGL.loadMatrix(sEyeProjection);
+    gGL.matrixMode(LLRender::MM_MODELVIEW);
+    gGL.pushMatrix();
+    gGL.loadMatrix(sEyeModelview);
+    {
+        LLGLDepthTest no_depth(GL_FALSE, GL_FALSE);
+        LLGLDisable no_cull(GL_CULL_FACE);
+        LLGLEnable blend(GL_BLEND);
+        gGL.setSceneBlendType(LLRender::BT_ALPHA);
+        gUIProgram.bind();
+        gGL.getTexUnit(0)->bind(LLViewerFetchedTexture::sWhiteImagep);
+        const S32 steps = 32;
+        auto ring = [&](F32 inner, F32 outer, const LLColor4& colour)
+        {
+            gGL.color4fv(colour.mV);
+            gGL.begin(LLRender::TRIANGLE_STRIP);
+            for (S32 i = 0; i <= steps; ++i)
+            {
+                const F32 a = F_TWO_PI * i / steps;
+                const F32 c = cosf(a);
+                const F32 s = sinf(a);
+                gGL.vertex3fv((point + right * (c * outer) + up * (s * outer)).mV);
+                gGL.vertex3fv((point + right * (c * inner) + up * (s * inner)).mV);
+            }
+            gGL.end();
+        };
+        ring(0.62f, 1.18f, LLColor4(0.f, 0.f, 0.f, 0.55f * fade));
+        ring(0.72f, 1.f, LLColor4(1.f, 1.f, 1.f, 0.95f * fade));
+        ring(0.f, 0.2f, LLColor4(1.f, 1.f, 1.f, 0.95f * fade));
+        gGL.flush();
+        gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
+        gUIProgram.unbind();
+    }
     gGL.matrixMode(LLRender::MM_PROJECTION);
     gGL.popMatrix();
     gGL.matrixMode(LLRender::MM_MODELVIEW);
