@@ -7241,6 +7241,14 @@ F32 LLViewerWindow::getWorldViewAspectRatio() const
 void LLViewerWindow::calcDisplayScale()
 {
     F32 ui_scale_factor = llclamp(gSavedSettings.getF32("UIScaleFactor") * mWindow->getSystemUISize(), MIN_UI_SCALE, MAX_UI_SCALE);
+    // <SpatiWorld> In a headset a pixel is a far smaller angle than on a desk, and the UI is
+    // pointed at rather than clicked: it has its own, bigger, scale there.
+    if (SpatiandStereo::isStereo())
+    {
+        static LLCachedControl<F32> stereo_scale(gSavedSettings, "SpatiWorldUIScale", 1.4f);
+        ui_scale_factor = llclamp((F32)stereo_scale, MIN_UI_SCALE, MAX_UI_SCALE);
+    }
+    // </SpatiWorld>
     LLVector2 display_scale;
     display_scale.setVec(llmax(1.f / mWindow->getPixelAspectRatio(), 1.f), llmax(mWindow->getPixelAspectRatio(), 1.f));
     display_scale *= ui_scale_factor;

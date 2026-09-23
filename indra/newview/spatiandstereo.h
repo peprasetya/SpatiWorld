@@ -26,12 +26,15 @@
 
 #include "stdtypes.h"
 #include "llrect.h"
+#include "llhandle.h"
+#include "llcoord.h"
 
 #include <cstddef>
 
 class LLQuaternion;
 class LLVector3;
 class LLRenderTarget;
+class LLFloater;
 
 // Run as a remote application of a spatiand host, this viewer may be asked to draw both of the
 // wearer's eyes into one window. Being remote and being in a headset are asked separately on
@@ -139,15 +142,18 @@ public:
     // beginUI is true once a frame, in the first eye, with the panel's target bound; drawUI
     // puts the panel into whichever eye is being drawn.
     //
-    // Two layers, at two depths. The floaters (and HUD attachments) are the far one; the menu
-    // bar, toolbars, chat bar, menus and tooltips the near one, SpatiWorldChromeDistance away --
-    // the controls a hand reaches for stand in front of the windows they control, and a menu
-    // is never behind the floater it opened over. Each is drawn once a frame, in the first eye.
-    enum ELayer { LAYER_FLOATERS, LAYER_CHROME };
+    // Three layers, at three depths. The floaters (and HUD attachments) are the far one; the
+    // floater being worked in -- the one with focus -- steps out of them towards the wearer,
+    // SpatiWorldActiveDistance away; the menu bar, toolbars, chat bar, menus and tooltips are
+    // the nearest, SpatiWorldChromeDistance away -- the controls a hand reaches for stand in
+    // front of the windows they control, and a menu is never behind the floater it opened
+    // over. Each is drawn once a frame, in the first eye.
+    enum ELayer { LAYER_FLOATERS, LAYER_ACTIVE, LAYER_CHROME };
     static bool beginUI(ELayer layer);
     static void endUI(ELayer layer);
-    // The far layer's contents: the floater view's branch of the UI and nothing else.
-    static void drawFloaters();
+    // A floater layer's contents: the floater view's branch of the UI, all of it but the
+    // active floater for LAYER_FLOATERS, and only that floater for LAYER_ACTIVE.
+    static void drawFloaters(ELayer layer);
     static void drawUI();
     // **The pointer, drawn here and at its depth.** spatiand knows which way the pointer points
     // and nothing about how far away the thing under it is; this viewer knows both. So it asks
@@ -186,8 +192,15 @@ private:
     static LLRenderTarget* sEyeTarget;
     static LLRenderTarget* sUITarget;
     static LLRenderTarget* sFloaterTarget;
+    static LLRenderTarget* sActiveTarget;
     static bool sFloatersDrawn;
+    static bool sActiveDrawn;
     static bool sPointerOnFloaters;
+    // The floater with focus, top-level, found once a frame when the floaters are drawn.
+    static LLHandle<LLFloater> sActive;
+    static LLFloater* findActiveFloater();
+    // The top-level floater whose rectangle is under the pointer, frontmost first.
+    static LLFloater* floaterAt(const LLCoordGL& mouse);
     static void drawLayer(LLRenderTarget* target, F32 distance);
     static S32 sEyeWidth;
     static S32 sEyeHeight;

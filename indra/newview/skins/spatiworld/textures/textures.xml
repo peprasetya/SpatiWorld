@@ -125,25 +125,25 @@
   <texture name="Window_Background" file_name="spatiworld/Window_Background.png" preload="true" scale.left="12" scale.top="60" scale.right="52" scale.bottom="12" />
   <texture name="Window_NoTitle_Foreground" file_name="spatiworld/Window_NoTitle_Foreground.png" preload="true" scale.left="12" scale.top="52" scale.right="52" scale.bottom="12" />
   <texture name="Window_NoTitle_Background" file_name="spatiworld/Window_NoTitle_Background.png" preload="true" scale.left="12" scale.top="52" scale.right="52" scale.bottom="12" />
-  <texture name="PushButton_Off" file_name="spatiworld/PushButton_Off.png" preload="true" scale.left="7" scale.top="17" scale.right="25" scale.bottom="6" />
-  <texture name="PushButton_Over" file_name="spatiworld/PushButton_Over.png" preload="true" scale.left="7" scale.top="17" scale.right="25" scale.bottom="6" />
-  <texture name="PushButton_Press" file_name="spatiworld/PushButton_Press.png" preload="true" scale.left="7" scale.top="17" scale.right="25" scale.bottom="6" />
-  <texture name="PushButton_Selected" file_name="spatiworld/PushButton_Selected.png" preload="true" scale.left="7" scale.top="17" scale.right="25" scale.bottom="6" />
-  <texture name="PushButton_Selected_Press" file_name="spatiworld/PushButton_Selected_Press.png" preload="true" scale.left="7" scale.top="17" scale.right="25" scale.bottom="6" />
-  <texture name="PushButton_On" file_name="spatiworld/PushButton_On.png" preload="true" scale.left="7" scale.top="17" scale.right="25" scale.bottom="6" />
-  <texture name="PushButton_On_Selected" file_name="spatiworld/PushButton_On_Selected.png" preload="true" scale.left="7" scale.top="17" scale.right="25" scale.bottom="6" />
-  <texture name="PushButton_Disabled" file_name="spatiworld/PushButton_Disabled.png" preload="true" scale.left="7" scale.top="17" scale.right="25" scale.bottom="6" />
-  <texture name="PushButton_Selected_Disabled" file_name="spatiworld/PushButton_Selected_Disabled.png" preload="true" scale.left="7" scale.top="17" scale.right="25" scale.bottom="6" />
-  <texture name="Toolbar_Left_Off" file_name="spatiworld/Toolbar_Off.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
-  <texture name="Toolbar_Middle_Off" file_name="spatiworld/Toolbar_Off.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
-  <texture name="Toolbar_Right_Off" file_name="spatiworld/Toolbar_Off.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
-  <texture name="Toolbar_Left_Over" file_name="spatiworld/Toolbar_Over.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
-  <texture name="Toolbar_Middle_Over" file_name="spatiworld/Toolbar_Over.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
-  <texture name="Toolbar_Right_Over" file_name="spatiworld/Toolbar_Over.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
-  <texture name="Toolbar_Left_Selected" file_name="spatiworld/Toolbar_Selected.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
-  <texture name="Toolbar_Middle_Selected" file_name="spatiworld/Toolbar_Selected.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
-  <texture name="Toolbar_Right_Selected" file_name="spatiworld/Toolbar_Selected.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
-  <texture name="Toolbar_Left_Flash" file_name="spatiworld/Toolbar_Flash.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
-  <texture name="Toolbar_Middle_Flash" file_name="spatiworld/Toolbar_Flash.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
-  <texture name="Toolbar_Right_Flash" file_name="spatiworld/Toolbar_Flash.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="6" />
+  <texture name="PushButton_Off" file_name="spatiworld/PushButton_Off.png" preload="true" scale.left="7" scale.top="18" scale.right="25" scale.bottom="9" />
+  <texture name="PushButton_Over" file_name="spatiworld/PushButton_Over.png" preload="true" scale.left="7" scale.top="18" scale.right="25" scale.bottom="9" />
+  <texture name="PushButton_Press" file_name="spatiworld/PushButton_Press.png" preload="true" scale.left="7" scale.top="18" scale.right="25" scale.bottom="9" />
+  <texture name="PushButton_Selected" file_name="spatiworld/PushButton_Selected.png" preload="true" scale.left="7" scale.top="18" scale.right="25" scale.bottom="9" />
+  <texture name="PushButton_Selected_Press" file_name="spatiworld/PushButton_Selected_Press.png" preload="true" scale.left="7" scale.top="18" scale.right="25" scale.bottom="9" />
+  <texture name="PushButton_On" file_name="spatiworld/PushButton_On.png" preload="true" scale.left="7" scale.top="18" scale.right="25" scale.bottom="9" />
+  <texture name="PushButton_On_Selected" file_name="spatiworld/PushButton_On_Selected.png" preload="true" scale.left="7" scale.top="18" scale.right="25" scale.bottom="9" />
+  <texture name="PushButton_Disabled" file_name="spatiworld/PushButton_Disabled.png" preload="true" scale.left="7" scale.top="18" scale.right="25" scale.bottom="9" />
+  <texture name="PushButton_Selected_Disabled" file_name="spatiworld/PushButton_Selected_Disabled.png" preload="true" scale.left="7" scale.top="18" scale.right="25" scale.bottom="9" />
+  <texture name="Toolbar_Left_Off" file_name="spatiworld/Toolbar_Off.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
+  <texture name="Toolbar_Middle_Off" file_name="spatiworld/Toolbar_Off.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
+  <texture name="Toolbar_Right_Off" file_name="spatiworld/Toolbar_Off.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
+  <texture name="Toolbar_Left_Over" file_name="spatiworld/Toolbar_Over.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
+  <texture name="Toolbar_Middle_Over" file_name="spatiworld/Toolbar_Over.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
+  <texture name="Toolbar_Right_Over" file_name="spatiworld/Toolbar_Over.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
+  <texture name="Toolbar_Left_Selected" file_name="spatiworld/Toolbar_Selected.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
+  <texture name="Toolbar_Middle_Selected" file_name="spatiworld/Toolbar_Selected.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
+  <texture name="Toolbar_Right_Selected" file_name="spatiworld/Toolbar_Selected.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
+  <texture name="Toolbar_Left_Flash" file_name="spatiworld/Toolbar_Flash.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
+  <texture name="Toolbar_Middle_Flash" file_name="spatiworld/Toolbar_Flash.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
+  <texture name="Toolbar_Right_Flash" file_name="spatiworld/Toolbar_Flash.png" preload="true" scale.left="7" scale.top="19" scale.right="24" scale.bottom="9" />
 </textures>

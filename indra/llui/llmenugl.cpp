@@ -90,7 +90,10 @@ const U32 BRIEF_PAD_PIXELS = 2;
 
 const U32 SEPARATOR_HEIGHT_PIXELS = 8;
 const S32 TEAROFF_SEPARATOR_HEIGHT_PIXELS = 10;
-const S32 MENU_ITEM_PADDING = 4;
+// <SpatiWorld> See LLMenuGL::sItemPadding.
+S32 LLMenuGL::sItemPadding = 4;
+#define MENU_ITEM_PADDING (LLMenuGL::sItemPadding)
+// </SpatiWorld>
 
 const std::string SEPARATOR_NAME("separator");
 const std::string VERTICAL_SEPARATOR_LABEL( "|" );
