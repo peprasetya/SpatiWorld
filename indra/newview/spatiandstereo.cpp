@@ -27,14 +27,118 @@
 
 #include "llviewerwindow.h"
 #include "llwindow.h"
+#include "llquaternion.h"
+#include "llviewercontrol.h"
+#include "llviewerjoystick.h"
+#include "llviewercamera.h"
+#include "llrendertarget.h"
+#include "llgl.h"
 
+#include <cmath>
+#include <cstdio>
+#include <sys/socket.h>
+#include "v3math.h"
+
+#include <atomic>
+#include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
+#include <sys/mman.h>
 
 bool                  SpatiandStereo::sRemote = false;
 SpatiandStereo::EEyes SpatiandStereo::sEyes = SpatiandStereo::EYES_MONO;
-S32                   SpatiandStereo::sCurrentEye = 0;
+S32                   SpatiandStereo::sCurrentEye = SpatiandStereo::NO_EYE;
 F32                   SpatiandStereo::sEyeSeparation = 0.064f;
+const U8*             SpatiandStereo::sPoses = NULL;
+LLRenderTarget*       SpatiandStereo::sEyeTarget = NULL;
+U32                   SpatiandStereo::sRenderWidth = 0;
+U32                   SpatiandStereo::sRenderHeight = 0;
+U32                   SpatiandStereo::sAskedWidth = 0;
+U32                   SpatiandStereo::sAskedHeight = 0;
+size_t                SpatiandStereo::sPosesSize = 0;
+
+namespace
+{
+    // The pose ring, exactly as spatiand_xr_v1.xml lays it out and spatiand_proto::pose checks
+    // it: little-endian, naturally aligned, OpenXR's frame (+X right, +Y up, -Z forward) and
+    // OpenXR's field order. The asserts are the same numbers that test pins on the other side,
+    // so a layout change breaks the build here rather than turning the head sideways.
+    struct PoseHeader
+    {
+        U32 version;
+        U32 slot_count;
+        U32 slot_stride;
+        U32 slots_offset;
+        U64 write_index;
+        U64 reserved;
+    };
+
+    struct PoseEye
+    {
+        F32 orientation[4]; // x, y, z, w
+        F32 position[3];
+        F32 pad;
+        F32 fov[4];         // angleLeft, angleRight, angleUp, angleDown
+    };
+
+    struct PoseSlot
+    {
+        U64 seq;
+        S64 sample_ns;
+        S64 predicted_ns;
+        S64 reserved;
+        F32 head_orientation[4];
+        F32 head_position[3];
+        F32 pad;
+        PoseEye eye[2];
+    };
+
+    static_assert(sizeof(PoseHeader) == 32, "pose ring header layout");
+    static_assert(sizeof(PoseEye) == 48, "pose ring eye layout");
+    static_assert(sizeof(PoseSlot) == 160, "pose ring slot layout");
+
+    // A pose older than this is the headset asleep or the session gone, not a head holding
+    // still -- a still head is still written every frame. Past it the view goes back to the aim
+    // rather than staying turned towards wherever the wearer last looked.
+    const S64 STALE_NS = 500 * 1000 * 1000;
+
+    S64 monotonic_ns()
+    {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        return (S64)ts.tv_sec * 1000000000LL + ts.tv_nsec;
+    }
+
+    // The reader's half of the seqlock: newest slot, stepping back one if the writer is in it.
+    bool read_newest(const U8* memory, PoseSlot& out)
+    {
+        const volatile PoseHeader* header = (const volatile PoseHeader*)memory;
+        U64 written = header->write_index;
+        if (written == 0)
+        {
+            return false;
+        }
+        const U32 mask = header->slot_count - 1;
+        const U8* slots = memory + header->slots_offset;
+        const U32 stride = header->slot_stride;
+        for (U64 back = 1; back <= 2 && back <= written; ++back)
+        {
+            const volatile PoseSlot* at =
+                (const volatile PoseSlot*)(slots + (size_t)((written - back) & mask) * stride);
+            U64 before = at->seq;
+            std::atomic_thread_fence(std::memory_order_acquire);
+            memcpy(&out, (const void*)at, sizeof(PoseSlot));
+            std::atomic_thread_fence(std::memory_order_acquire);
+            U64 after = at->seq;
+            if ((before & 1) == 0 && before == after)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+}
 
 namespace
 {
@@ -84,7 +188,12 @@ void SpatiandStereo::detect()
         }
     }
 
-    sCurrentEye = 0;
+    sCurrentEye = NO_EYE;
+
+    if (sRemote)
+    {
+        mapPoses();
+    }
 
     if (!sRemote)
     {
@@ -113,18 +222,303 @@ void SpatiandStereo::detect()
     // one flat window had rather than at half of it. Everything inside the viewer goes on
     // believing the window is one eye wide — see LLViewerWindow::reshape, which halves what
     // the compositor hands back.
-    S32 eye_width = gViewerWindow->getWindowWidthRaw();
-    S32 height = gViewerWindow->getWindowHeightRaw();
-    LL_INFOS("Spatiand") << "asking for a window of " << (eye_width * 2) << "x" << height
-                         << " to put two " << eye_width << "x" << height << " eyes in" << LL_ENDL;
-    gViewerWindow->getWindow()->setSize(LLCoordWindow(eye_width * 2, height));
+    // The size spatiand said, if it has; otherwise twice the window as it is, which is at least
+    // two eyes of the size this viewer was already drawing.
+    listen();
+    askForSize();
+
+    // The glasses' own field of view, told to the simulator once. It decides what the region
+    // sends, and a viewer that claims SL's sixty degrees while showing the glasses' thirty
+    // gets sent twice the world it can see. Per frame the camera is held to it quietly; see
+    // LLViewerCamera::updateCameraLocation.
+    F32 vertical = 0.f, aspect = 0.f;
+    if (eyeView(vertical, aspect))
+    {
+        LLViewerCamera::getInstance()->setDefaultFOV(vertical);
+        LL_INFOS("Spatiand") << "drawing at the glasses' field of view: "
+                             << (vertical * RAD_TO_DEG) << " degrees high, aspect " << aspect << LL_ENDL;
+    }
+
+    // And say what this window has become: two eyes, side by side, and the room itself rather
+    // than a window in it. spatiand-host passes it on; the session claims it on its side.
+    tell("set_eye_layout side_by_side");
+    tell("set_layer projection");
+}
+
+void SpatiandStereo::tell(const char* message)
+{
+    const char* fd_text = getenv("SPATIAND_CONTROL_FD");
+    if (!fd_text || !fd_text[0])
+    {
+        LL_WARNS("Spatiand") << "cannot say '" << message << "': spatiand-host gave no control socket"
+                             << " (the catalogue entry is not kind = \"vr\")" << LL_ENDL;
+        return;
+    }
+    int fd = atoi(fd_text);
+    if (send(fd, message, strlen(message), MSG_NOSIGNAL) < 0)
+    {
+        LL_WARNS("Spatiand") << "could not say '" << message << "': " << strerror(errno) << LL_ENDL;
+        return;
+    }
+    LL_INFOS("Spatiand") << "told spatiand-host: " << message << LL_ENDL;
 }
 
 F32 SpatiandStereo::currentEyeShift()
 {
-    if (!isStereo())
+    if (!isStereo() || sCurrentEye == NO_EYE)
     {
         return 0.f;
     }
     return (sCurrentEye > 0) ? (sEyeSeparation * 0.5f) : (-sEyeSeparation * 0.5f);
+}
+
+void SpatiandStereo::mapPoses()
+{
+    const char* fd_text = getenv("SPATIAND_POSE_FD");
+    const char* size_text = getenv("SPATIAND_POSE_SIZE");
+    if (!fd_text || !fd_text[0] || !size_text || !size_text[0])
+    {
+        LL_INFOS("Spatiand") << "no head to follow: spatiand-host did not hand over a pose ring"
+                             << " (the catalogue entry is not kind = \"vr\")" << LL_ENDL;
+        return;
+    }
+    int fd = atoi(fd_text);
+    size_t size = (size_t)strtoull(size_text, NULL, 10);
+    if (fd < 0 || size < sizeof(PoseHeader))
+    {
+        LL_WARNS("Spatiand") << "ignoring a pose ring that cannot be right: fd " << fd_text
+                             << ", " << size_text << " bytes" << LL_ENDL;
+        return;
+    }
+    void* memory = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+    if (memory == MAP_FAILED)
+    {
+        LL_WARNS("Spatiand") << "could not map the pose ring: " << strerror(errno) << LL_ENDL;
+        return;
+    }
+    const PoseHeader* header = (const PoseHeader*)memory;
+    const U32 count = header->slot_count;
+    bool power_of_two = count && !(count & (count - 1));
+    if (header->version != 1 || !power_of_two || header->slot_stride < sizeof(PoseSlot)
+        || (size_t)header->slots_offset + (size_t)count * header->slot_stride > size)
+    {
+        LL_WARNS("Spatiand") << "the pose ring is not a layout this viewer knows (version "
+                             << header->version << "); not following the head" << LL_ENDL;
+        munmap(memory, size);
+        return;
+    }
+    sPoses = (const U8*)memory;
+    sPosesSize = size;
+    LL_INFOS("Spatiand") << "following the head: pose ring mapped, " << count << " slots" << LL_ENDL;
+}
+
+bool SpatiandStereo::headRotation(LLQuaternion& rotation)
+{
+    if (!sPoses)
+    {
+        return false;
+    }
+    PoseSlot slot;
+    if (!read_newest(sPoses, slot))
+    {
+        return false;
+    }
+    if (monotonic_ns() - slot.sample_ns > STALE_NS)
+    {
+        return false;
+    }
+    // OpenXR's frame to the camera's. OpenXR is +X right, +Y up, -Z forward; the camera here is
+    // +X at, +Y left, +Z up -- the same frame spatiand itself thinks in. A vector (a, b, c) in
+    // OpenXR's is (-c, -a, b) here, a pure rotation, so the quaternion's vector part maps the
+    // same way and w is untouched. This is the inverse of spatiand's to_openxr, and getting it
+    // backwards turns the world ninety degrees -- which looks like a tracking bug, not a sign.
+    const F32* q = slot.head_orientation;
+    rotation = LLQuaternion(-q[2], -q[0], q[1], q[3]);
+    rotation.normalize();
+    return true;
+}
+
+void SpatiandStereo::turnByHead(LLVector3& at, LLVector3& left, LLVector3& up)
+{
+    LLQuaternion head;
+    if (!headRotation(head))
+    {
+        return;
+    }
+    // The head's own axes, expressed in the aim's frame, then carried out into the world by the
+    // aim's axes: the view is the aim with the head's turn applied on top of it.
+    const LLVector3 aim_at = at;
+    const LLVector3 aim_left = left;
+    const LLVector3 aim_up = up;
+    const LLVector3 f = LLVector3::x_axis * head;
+    const LLVector3 l = LLVector3::y_axis * head;
+    const LLVector3 u = LLVector3::z_axis * head;
+    at   = aim_at * f.mV[VX] + aim_left * f.mV[VY] + aim_up * f.mV[VZ];
+    left = aim_at * l.mV[VX] + aim_left * l.mV[VY] + aim_up * l.mV[VZ];
+    up   = aim_at * u.mV[VX] + aim_left * u.mV[VY] + aim_up * u.mV[VZ];
+}
+
+S32 SpatiandStereo::flycamButton()
+{
+    // Right stick click on spatiand's pad, counted the way libndofdev counts: every button in
+    // code order, and the right stick's is the eleventh. See spatiand-pad's BUTTON_CODES.
+    static const S32 RIGHT_STICK_CLICK = 10;
+    static LLCachedControl<S32> chosen(gSavedSettings, "SpatiWorldFlycamButton", -1);
+    S32 button = chosen();
+    if (button < 0 || button >= MAX_JOYSTICK_BUTTONS)
+    {
+        button = sRemote ? RIGHT_STICK_CLICK : 0;
+    }
+    return button;
+}
+
+bool SpatiandStereo::eyeView(F32& vertical, F32& aspect)
+{
+    if (!isStereo() || !sPoses)
+    {
+        return false;
+    }
+    PoseSlot slot;
+    if (!read_newest(sPoses, slot))
+    {
+        return false;
+    }
+    // XrFovf: angleLeft, angleRight, angleUp, angleDown -- signed, so left and down are negative.
+    const F32* fov = slot.eye[0].fov;
+    const F32 up = fov[2];
+    const F32 down = fov[3];
+    const F32 width = tanf(fov[1]) - tanf(fov[0]);
+    const F32 height = tanf(up) - tanf(down);
+    if (!(up > down) || !(width > 0.f) || !(height > 0.f))
+    {
+        return false;
+    }
+    vertical = up - down;
+    aspect = width / height;
+    return true;
+}
+
+void SpatiandStereo::beginEye()
+{
+    if (!isStereo() || !gViewerWindow)
+    {
+        return;
+    }
+    const U32 width = gViewerWindow->getWindowWidthRaw();
+    const U32 height = gViewerWindow->getWindowHeightRaw();
+    if (!sEyeTarget)
+    {
+        sEyeTarget = new LLRenderTarget();
+    }
+    if (sEyeTarget->getWidth() != width || sEyeTarget->getHeight() != height)
+    {
+        sEyeTarget->release();
+        // With depth: the window it stands in for has one, and the viewer draws into it as if
+        // it were that window.
+        if (!sEyeTarget->allocate(width, height, GL_RGBA, true))
+        {
+            LL_WARNS("Spatiand") << "could not make a " << width << "x" << height
+                                 << " target to draw an eye into" << LL_ENDL;
+            return;
+        }
+        LL_INFOS("Spatiand") << "drawing each eye at " << width << "x" << height << LL_ENDL;
+    }
+    // As the bottom of the viewer's own stack of render targets, so that every target it binds
+    // and flushes during the frame hands back to this one rather than to the window.
+    sEyeTarget->bindTarget();
+    sEyeTarget->clear();
+}
+
+void SpatiandStereo::endEye()
+{
+    if (!sEyeTarget || LLRenderTarget::getCurrentBoundTarget() != sEyeTarget)
+    {
+        return;
+    }
+    const S32 width = sEyeTarget->getWidth();
+    const S32 height = sEyeTarget->getHeight();
+    sEyeTarget->flush();
+    // Into its half of the window: the left eye at the left edge, the right one beside it.
+    const S32 x = sCurrentEye > 0 ? width : 0;
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, sEyeTarget->getFBO());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBlitFramebuffer(0, 0, width, height, x, 0, x + width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void SpatiandStereo::present()
+{
+    if (isStereo() && gViewerWindow && gViewerWindow->getWindow())
+    {
+        gViewerWindow->getWindow()->swapBuffers();
+    }
+}
+
+void SpatiandStereo::listen()
+{
+    static const char* fd_text = getenv("SPATIAND_CONTROL_FD");
+    if (!fd_text || !fd_text[0])
+    {
+        return;
+    }
+    static const int fd = atoi(fd_text);
+    char buffer[128];
+    for (;;)
+    {
+        ssize_t n = recv(fd, buffer, sizeof(buffer) - 1, MSG_DONTWAIT);
+        if (n <= 0)
+        {
+            break;
+        }
+        buffer[n] = 0;
+        unsigned width = 0, height = 0;
+        if (sscanf(buffer, "set_render_size %u %u", &width, &height) == 2 && width > 0 && height > 0)
+        {
+            if (width != sRenderWidth || height != sRenderHeight)
+            {
+                sRenderWidth = width;
+                sRenderHeight = height;
+                LL_INFOS("Spatiand") << "spatiand wants the picture at " << width << "x" << height << LL_ENDL;
+            }
+        }
+        else
+        {
+            LL_WARNS("Spatiand") << "spatiand-host said something this viewer does not know: " << buffer << LL_ENDL;
+        }
+    }
+    if (isStereo())
+    {
+        askForSize();
+    }
+}
+
+void SpatiandStereo::askForSize()
+{
+    if (!isStereo() || !gViewerWindow || !gViewerWindow->getWindow())
+    {
+        return;
+    }
+    U32 width = sRenderWidth;
+    U32 height = sRenderHeight;
+    if (!width || !height)
+    {
+        // Nothing said yet: two eyes the size of the window as it was.
+        if (sAskedWidth)
+        {
+            return;
+        }
+        width = gViewerWindow->getWindowWidthRaw() * 2;
+        height = gViewerWindow->getWindowHeightRaw();
+    }
+    // Asked once per size, not every frame: a resize takes a round trip through the compositor,
+    // and asking again meanwhile would only queue more of them.
+    if (width == sAskedWidth && height == sAskedHeight)
+    {
+        return;
+    }
+    sAskedWidth = width;
+    sAskedHeight = height;
+    LL_INFOS("Spatiand") << "asking for a window of " << width << "x" << height
+                         << " to put two " << (width / 2) << "x" << height << " eyes in" << LL_ENDL;
+    gViewerWindow->getWindow()->setSize(LLCoordWindow(width, height));
 }

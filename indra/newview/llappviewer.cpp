@@ -1780,17 +1780,20 @@ bool LLAppViewer::doFrame()
                 pingMainloopTimeout("Main:Display");
                 gGLActive = true;
 
-                // Once per eye spatiand asked for. Both are drawn into the one window,
-                // side by side, and only the last of them is shown.
-                for (S32 eye = 0; eye < SpatiandStereo::eyeCount(); ++eye)
+                // Once per eye spatiand asked for. Each is drawn into a target of its own and
+                // copied into its half of the window; the window is shown once, after both.
+                // First, whatever spatiand-host has said since the last frame: the size to draw at.
+                SpatiandStereo::listen();
+                const S32 eyes = SpatiandStereo::eyeCount();
+                for (S32 eye = 0; eye < eyes; ++eye)
                 {
-                    SpatiandStereo::setCurrentEye(eye);
+                    SpatiandStereo::setEye(eyes > 1 ? eye : SpatiandStereo::NO_EYE);
+                    SpatiandStereo::beginEye();
                     display();
+                    SpatiandStereo::endEye();
                 }
-                // Back to the left eye for everything that is not drawing. Picking projects the
-                // mouse through whatever viewport was set last, and the right eye's sits half a
-                // window to the right; leaving it there would put every click in the wrong place.
-                SpatiandStereo::setCurrentEye(0);
+                SpatiandStereo::setEye(SpatiandStereo::NO_EYE);
+                SpatiandStereo::present();
 
                 if (LLStartUp::getStartupState() == STATE_STARTED) // <FS:Beq/> FIRE-34590 - Bugsplat caused by updating maps before world is loaded.
                 {

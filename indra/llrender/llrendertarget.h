@@ -141,6 +141,8 @@ public:
 
     //get Y resolution
     U32 getHeight() const { return mResY; }
+    // The framebuffer object itself, for blitting from it.
+    U32 getFBO() const { return mFBO; }
 
     LLTexUnit::eTextureType getUsage(void) const { return mUsage; }
 

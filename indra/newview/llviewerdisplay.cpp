@@ -498,7 +498,10 @@ void display(bool rebuild, F32 zoom_factor, int subfield, bool for_snapshot)
         LL_PROFILE_ZONE_NAMED_CATEGORY_DISPLAY("Resize Window");
         gGL.flush();
         glClear(GL_COLOR_BUFFER_BIT);
-        gViewerWindow->getWindow()->swapBuffers();
+        if (!SpatiandStereo::isStereo())
+        {
+            gViewerWindow->getWindow()->swapBuffers();
+        }
         LLPipeline::refreshCachedSettings();
         gPipeline.resizeScreenTexture();
         gResizeScreenTexture = false;
@@ -1717,9 +1720,9 @@ void swap()
     LL_PROFILE_GPU_ZONE("swap");
     if (gDisplaySwapBuffers)
     {
-        // Both eyes go into the one window before any of it is shown; swapping after the
-        // first would put a half-drawn frame in front of the wearer.
-        if (SpatiandStereo::isLastEye())
+        // In stereo the frame is shown once both eyes have been copied into the window; see
+        // SpatiandStereo::present. A swap here would show one eye's worth of it.
+        if (!SpatiandStereo::isStereo())
         {
             gViewerWindow->getWindow()->swapBuffers();
         }

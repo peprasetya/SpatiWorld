@@ -26,6 +26,12 @@
 
 #include "stdtypes.h"
 
+#include <cstddef>
+
+class LLQuaternion;
+class LLVector3;
+class LLRenderTarget;
+
 // Run as a remote application of a spatiand host, this viewer may be asked to draw both of the
 // wearer's eyes into one window. Being remote and being in a headset are asked separately on
 // purpose: the same protocol is meant to carry an ordinary window to an ordinary flat desktop,
@@ -52,27 +58,84 @@ public:
     static bool isStereo() { return sEyes == EYES_SIDE_BY_SIDE; }
 
     static S32 eyeCount() { return isStereo() ? 2 : 1; }
+    // Which eye is being drawn: 0 left, 1 right, NO_EYE between passes. Between passes the
+    // camera is the middle of the head, so whatever projects through it outside drawing (a
+    // pick, a name tag's placement) is not off to one side.
+    enum { NO_EYE = -1 };
     static S32 currentEye() { return sCurrentEye; }
-    static void setCurrentEye(S32 eye) { sCurrentEye = eye; }
-    static bool isLastEye() { return sCurrentEye >= eyeCount() - 1; }
+    static void setEye(S32 eye) { sCurrentEye = eye; }
 
-    // Where this eye's half of the window starts, in raw pixels from the left edge. Takes the
-    // width of one eye rather than asking the window for it, so that the viewport code can
-    // call this while it is in the middle of deciding what the window is.
-    static S32 viewportOffsetX(S32 eye_width)
-    {
-        return (isStereo() && sCurrentEye > 0) ? eye_width : 0;
-    }
+    // **Each eye in a framebuffer of its own.** An eye is drawn into an offscreen target the
+    // size of one eye, at 0,0, and only then copied into its half of the window. Drawing it
+    // straight into its half with an offset viewport leaked at every seam: the UI's scissor is
+    // in window coordinates, whole-window clears wiped the other eye, a resize re-fed the
+    // halved width. To the viewer each pass is an ordinary single-window frame, and nothing in
+    // it has to know there are two.
+    static void beginEye();
+    static void endEye();
+    // Show the frame: one swap, after both eyes are in the window.
+    static void present();
+
+    // Read what spatiand-host has said, and act on it. It says one thing: the size the session
+    // wants the two eyes drawn at, which is the glasses' own and not whatever this window
+    // happened to be. Called once a frame, before and after login alike; one non-blocking read.
+    static void listen();
 
     // How far this eye sits from the middle of the head, in metres: negative is left of it.
     static F32 currentEyeShift();
     static F32 eyeSeparation() { return sEyeSeparation; }
+
+    // **Where the head is turned, relative to where the avatar is aiming.** In the camera's own
+    // frame: +X along the aim, +Y to its left, +Z up. The view is the aim turned by this; the
+    // aim itself -- what the thumbsticks steer and the avatar follows -- is left alone, so the
+    // wearer can look around without changing where they are going.
+    //
+    // Read from the shared-memory ring spatiand-host hands this process, newest sample, taken
+    // the moment it is asked for. False when there is no head to follow: no ring, nothing in it
+    // yet, or nothing recent (the headset asleep, the session gone). Then the view is the aim,
+    // which is what an ordinary flat viewer does.
+    static bool headRotation(LLQuaternion& rotation);
+
+    // Turn an aim -- its three axes -- by the wearer's head, in place, so they become the view.
+    // Left exactly as they were when there is no head to follow. The one place the head is
+    // applied, shared by the camera that follows the avatar and the detached flycam, so the
+    // two cannot come to disagree about which way is up.
+    static void turnByHead(LLVector3& at, LLVector3& left, LLVector3& up);
+
+    // The joystick button that detaches the camera from the avatar, and gives it back.
+    //
+    // Second Life hard-wires this to button 0, which on a 3D mouse is the left button and on a
+    // gamepad is A -- the button a thumb rests on to jump or confirm. Under spatiand the
+    // default is the right stick's click instead: the right stick is already the camera, so
+    // pressing it to set the camera free is where a hand expects it to be. SpatiWorldFlycamButton
+    // overrides either; -1 means "whichever of those fits".
+    static S32 flycamButton();
+
+    // The glasses' field of view, as the camera wants it: the vertical angle in radians and
+    // the width-to-height ratio. What the viewer draws has to be exactly what the glasses show,
+    // or a turn of the head moves the world by the wrong amount and it swims. False when not
+    // drawing two eyes, or before the first pose has arrived.
+    static bool eyeView(F32& vertical, F32& aspect);
 
 private:
     static bool  sRemote;
     static EEyes sEyes;
     static S32   sCurrentEye;
     static F32   sEyeSeparation;
+
+    static void mapPoses();
+    static LLRenderTarget* sEyeTarget;
+    // What spatiand-host last said the picture should be, both eyes together, and what this
+    // viewer last asked its window to become.
+    static U32 sRenderWidth;
+    static U32 sRenderHeight;
+    static U32 sAskedWidth;
+    static U32 sAskedHeight;
+    static void askForSize();
+    // Say something to spatiand-host down the control socket, in spatiand_xr_v1's words.
+    static void tell(const char* message);
+    static const U8* sPoses;
+    static size_t    sPosesSize;
 };
 
 #endif // SPATIANDSTEREO_H

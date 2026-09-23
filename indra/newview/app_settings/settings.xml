@@ -6613,6 +6613,17 @@
       <key>Value</key>
       <integer>1</integer>
     </map>
+    <key>SpatiWorldFlycamButton</key>
+    <map>
+      <key>Comment</key>
+      <string>Joystick button that detaches the camera from the avatar (flycam) and gives it back. -1 chooses: the right stick click when run by spatiand, button 0 otherwise.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>S32</string>
+      <key>Value</key>
+      <integer>-1</integer>
+    </map>
     <key>JoystickInitialized</key>
     <map>
       <key>Comment</key>
