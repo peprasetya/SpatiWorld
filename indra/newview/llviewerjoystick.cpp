@@ -33,6 +33,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llviewerjoystick.h"
+#include "spatiandstereo.h"
 
 #include "llviewercontrol.h"
 #include "llviewerwindow.h"
@@ -1377,9 +1378,25 @@ void LLViewerJoystick::moveFlycam(bool reset)
     LLViewerCamera::getInstance()->setView(sFlycamZoom);
     LLVector3 new_camera_pos = gAgent.getPosAgentFromGlobal(sFlycamPosition);
     LLViewerCamera::getInstance()->setOrigin(new_camera_pos);
-    LLViewerCamera::getInstance()->mXAxis = LLVector3(mat.mMatrix[0]);
-    LLViewerCamera::getInstance()->mYAxis = LLVector3(mat.mMatrix[1]);
-    LLViewerCamera::getInstance()->mZAxis = LLVector3(mat.mMatrix[2]);
+    // **The detached camera still has a head on it.** What the sticks steer here is the aim --
+    // it is also what the flycam moves along, so pushing forward goes where the camera points,
+    // not where the wearer happens to be looking. The head turns the view on top of it, exactly
+    // as it does for the camera that follows the avatar.
+    LLVector3 at(mat.mMatrix[0]);
+    LLVector3 left(mat.mMatrix[1]);
+    LLVector3 up(mat.mMatrix[2]);
+    F32 eye_view = 0.f, eye_aspect = 0.f;
+    if (SpatiandStereo::eyeView(eye_view, eye_aspect))
+    {
+        // The flycam's zoom is the glasses' field of view while drawing two eyes; see
+        // LLViewerCamera::updateCameraLocation.
+        LLViewerCamera::getInstance()->setViewNoBroadcast(eye_view);
+        LLViewerCamera::getInstance()->setAspect(eye_aspect);
+    }
+    SpatiandStereo::turnByHead(at, left, up);
+    LLViewerCamera::getInstance()->mXAxis = at;
+    LLViewerCamera::getInstance()->mYAxis = left;
+    LLViewerCamera::getInstance()->mZAxis = up;
 }
 
 // -----------------------------------------------------------------------------
@@ -1452,9 +1469,12 @@ void LLViewerJoystick::scanJoystick()
 
     static long toggle_flycam = 0;
 
-    if (mBtn[0] == 1)
+    // Which button detaches the camera: see SpatiandStereo::flycamButton for why it is not
+    // simply button 0 under spatiand.
+    const S32 flycam_button = SpatiandStereo::flycamButton();
+    if (mBtn[flycam_button] == 1)
     {
-        if (mBtn[0] != toggle_flycam)
+        if (mBtn[flycam_button] != toggle_flycam)
         {
             toggle_flycam = toggleFlycam() ? 1 : 0;
         }

@@ -140,6 +140,23 @@ bool LLViewerCamera::updateCameraLocation(const LLVector3 &center, const LLVecto
     if (up.isNull() || !up.isFinite())
         return false;
 
+    // **The aim, turned by the head.** What was built above is the aim: where the avatar is
+    // facing, where the thumbsticks point, what the agent camera follows. The view is that
+    // turned by the wearer's head, so looking around moves what is drawn and nothing else --
+    // like looking out of a side window while still steering straight. Done here, before the
+    // axes are set, so culling, projection, picking and the sound listener all see the view,
+    // while everything that steers the avatar goes on reading the aim from the agent camera.
+    // Held to the glasses' field of view while drawing two eyes. Quietly: setView tells the
+    // simulator, and SL's own zoom pulling the other way every frame would have it told sixty
+    // times a second. It was told once, when stereo began.
+    F32 eye_view = 0.f, eye_aspect = 0.f;
+    if (SpatiandStereo::eyeView(eye_view, eye_aspect))
+    {
+        setViewNoBroadcast(eye_view);
+        setAspect(eye_aspect);
+    }
+    SpatiandStereo::turnByHead(at, left, up);
+
     setOrigin(origin);
     setAxes(at, left, up);
 
@@ -399,12 +416,15 @@ void LLViewerCamera::setPerspective(bool for_selection,
     // so that everything reading these matrices afterwards sees a camera that simply
     // stands where that eye stands. Selection keeps the middle of the head: a pick is the
     // wearer pointing at something, not either eye looking at it.
+    const glm::mat4 head_modelview = modelview;
+    bool eye_shifted = false;
     if (!for_selection)
     {
         F32 eye_shift = SpatiandStereo::currentEyeShift();
         if (eye_shift != 0.f)
         {
             modelview = glm::translate(glm::vec3(-eye_shift, 0.f, 0.f)) * modelview;
+            eye_shifted = true;
         }
     }
 
@@ -429,7 +449,21 @@ void LLViewerCamera::setPerspective(bool for_selection,
         set_current_modelview(modelview);
     }
 
-    updateFrustumPlanes(*this);
+    // Culling is done from the middle of the head, not from the eye. updateFrustumPlanes takes
+    // the near corners from these matrices but aims the far ones from getOrigin(), which does
+    // not move with the eye; with a near plane a few centimetres wide, an eye's step sideways
+    // turns that into a frustum swung several degrees the other way, and each eye loses a strip
+    // of the world along one side. The middle frustum is the one both eyes almost exactly share.
+    if (eye_shifted && mZoomFactor == 1.f)
+    {
+        set_current_modelview(head_modelview);
+        updateFrustumPlanes(*this);
+        set_current_modelview(modelview);
+    }
+    else
+    {
+        updateFrustumPlanes(*this);
+    }
 }
 
 // Uses the last GL matrices set in set_perspective to project a point from
