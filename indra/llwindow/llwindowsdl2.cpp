@@ -1228,12 +1228,27 @@ void LLWindowSDL::setMinSize(U32 min_width, U32 min_height, bool enforce_immedia
 #endif
 }
 
+// <SpatiWorld> The pointer as laid out or as shown; see LLWindow::sCursorMap.
+static void map_cursor(LLCoordWindow& position, bool to_layout)
+{
+    S32 x = position.mX;
+    S32 y = position.mY;
+    if (LLWindow::sCursorMap && LLWindow::sCursorMap(x, y, to_layout))
+    {
+        position.mX = x;
+        position.mY = y;
+    }
+}
+// </SpatiWorld>
+
 bool LLWindowSDL::setCursorPosition(const LLCoordWindow position)
 {
     bool result = true;
     LLCoordScreen screen_pos;
 
-    if (!convertCoords(position, &screen_pos))
+    LLCoordWindow shown = position; // <SpatiWorld/>
+    map_cursor(shown, false);       // <SpatiWorld/>
+    if (!convertCoords(shown, &screen_pos))
     {
         return false;
     }
@@ -1260,7 +1275,14 @@ bool LLWindowSDL::getCursorPosition(LLCoordWindow *position)
     screen_pos.mX = x;
     screen_pos.mY = y;
 
-    return convertCoords(screen_pos, position);
+    // <SpatiWorld>
+    if (!convertCoords(screen_pos, position))
+    {
+        return false;
+    }
+    map_cursor(*position, true);
+    return true;
+    // </SpatiWorld>
 }
 
 
@@ -1840,6 +1862,7 @@ void LLWindowSDL::gatherInput()
             case SDL_MOUSEMOTION:
             {
                 LLCoordWindow winCoord(event.button.x, event.button.y);
+                map_cursor(winCoord, true); // <SpatiWorld/>
                 LLCoordGL openGlCoord;
                 convertCoords(winCoord, &openGlCoord);
                 MASK mask = gKeyboard->currentMask(true);
@@ -1934,6 +1957,7 @@ void LLWindowSDL::gatherInput()
             {
                 bool isDoubleClick = false;
                 LLCoordWindow winCoord(event.button.x, event.button.y);
+                map_cursor(winCoord, true); // <SpatiWorld/>
                 LLCoordGL openGlCoord;
                 convertCoords(winCoord, &openGlCoord);
                 MASK mask = gKeyboard->currentMask(true);
@@ -1997,6 +2021,7 @@ void LLWindowSDL::gatherInput()
             case SDL_MOUSEBUTTONUP:
             {
                 LLCoordWindow winCoord(event.button.x, event.button.y);
+                map_cursor(winCoord, true); // <SpatiWorld/>
                 LLCoordGL openGlCoord;
                 convertCoords(winCoord, &openGlCoord);
                 MASK mask = gKeyboard->currentMask(true);

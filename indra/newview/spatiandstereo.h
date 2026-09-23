@@ -97,10 +97,34 @@ public:
     static bool headRotation(LLQuaternion& rotation);
 
     // Turn an aim -- its three axes -- by the wearer's head, in place, so they become the view.
-    // Left exactly as they were when there is no head to follow. The one place the head is
-    // applied, shared by the camera that follows the avatar and the detached flycam, so the
-    // two cannot come to disagree about which way is up.
+    // Left exactly as they were when there is no head to follow.
     static void turnByHead(LLVector3& at, LLVector3& left, LLVector3& up);
+
+    // **The camera is the aim, except while an eye is being drawn.** Between frames
+    // LLViewerCamera points where the avatar aims, or where the flycam does: the sticks steer
+    // it, picks and hovers are cast through it, the UI is laid out in front of it. Only for
+    // the passes that draw the eyes is it turned by the head, and then put back. So the head
+    // changes what is seen and nothing else, and a click lands where it was laid out, which
+    // mapCursor makes the same place it was seen.
+    static void beginFrame();
+    static void endFrame();
+
+    // Map the pointer between the view that is shown and the aim the UI is laid out in:
+    // LLWindow::sCursorMap while drawing two eyes. Window coordinates, one eye wide.
+    static bool mapCursor(S32& x, S32& y, bool to_layout);
+
+    // **The UI is a panel in front of the aim.** Menus, floaters and HUD attachments are drawn
+    // once a frame into a target of their own, laid out exactly as on a flat screen, and that
+    // target is set in the world in front of the aim, filling the view the aim has. Each eye
+    // then sees it where it stands, with the head free to look away from it and back -- so a
+    // button in a corner is reached by turning the head a little, not by straining the eyes.
+    // beginUI is true once a frame, in the first eye, with the panel's target bound; drawUI
+    // puts the panel into whichever eye is being drawn.
+    static bool beginUI();
+    static void endUI();
+    static void drawUI();
+    // The eye's own matrices, as LLViewerCamera::setPerspective made them, to draw the panel with.
+    static void noteEyeMatrices(const F32* projection, const F32* modelview);
 
     // The joystick button that detaches the camera from the avatar, and gives it back.
     //
@@ -125,6 +149,18 @@ private:
 
     static void mapPoses();
     static LLRenderTarget* sEyeTarget;
+    static LLRenderTarget* sUITarget;
+    static bool sUIDrawn;
+    // The aim and the view this frame was drawn with, and its field of view.
+    static bool sFrameKnown;
+    static bool sTurned;
+    static LLVector3 sAimAt, sAimLeft, sAimUp;
+    static LLVector3 sViewAt, sViewLeft, sViewUp;
+    static F32 sFrameView;
+    static F32 sFrameAspect;
+    static F32 sEyeProjection[16];
+    static F32 sEyeModelview[16];
+    static bool sEyeMatricesKnown;
     // What spatiand-host last said the picture should be, both eyes together, and what this
     // viewer last asked its window to become.
     static U32 sRenderWidth;

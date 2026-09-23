@@ -140,12 +140,9 @@ bool LLViewerCamera::updateCameraLocation(const LLVector3 &center, const LLVecto
     if (up.isNull() || !up.isFinite())
         return false;
 
-    // **The aim, turned by the head.** What was built above is the aim: where the avatar is
-    // facing, where the thumbsticks point, what the agent camera follows. The view is that
-    // turned by the wearer's head, so looking around moves what is drawn and nothing else --
-    // like looking out of a side window while still steering straight. Done here, before the
-    // axes are set, so culling, projection, picking and the sound listener all see the view,
-    // while everything that steers the avatar goes on reading the aim from the agent camera.
+    // What was built above is the aim: where the avatar is facing, where the thumbsticks
+    // point. The camera stays on it; the head turns it only while the eyes are drawn -- see
+    // SpatiandStereo::beginFrame.
     // Held to the glasses' field of view while drawing two eyes. Quietly: setView tells the
     // simulator, and SL's own zoom pulling the other way every frame would have it told sixty
     // times a second. It was told once, when stereo began.
@@ -155,7 +152,6 @@ bool LLViewerCamera::updateCameraLocation(const LLVector3 &center, const LLVecto
         setViewNoBroadcast(eye_view);
         setAspect(eye_aspect);
     }
-    SpatiandStereo::turnByHead(at, left, up);
 
     setOrigin(origin);
     setAxes(at, left, up);
@@ -429,6 +425,10 @@ void LLViewerCamera::setPerspective(bool for_selection,
     }
 
     gGL.loadMatrix(glm::value_ptr(modelview));
+    if (!for_selection && mZoomFactor == 1.f)
+    {
+        SpatiandStereo::noteEyeMatrices(glm::value_ptr(proj_mat), glm::value_ptr(modelview));
+    }
 
     if (for_selection && (width > 1 || height > 1))
     {

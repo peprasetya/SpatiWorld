@@ -1378,10 +1378,10 @@ void LLViewerJoystick::moveFlycam(bool reset)
     LLViewerCamera::getInstance()->setView(sFlycamZoom);
     LLVector3 new_camera_pos = gAgent.getPosAgentFromGlobal(sFlycamPosition);
     LLViewerCamera::getInstance()->setOrigin(new_camera_pos);
-    // **The detached camera still has a head on it.** What the sticks steer here is the aim --
-    // it is also what the flycam moves along, so pushing forward goes where the camera points,
-    // not where the wearer happens to be looking. The head turns the view on top of it, exactly
-    // as it does for the camera that follows the avatar.
+    // What the sticks steer here is the flycam's aim, and what it moves along: pushing forward
+    // goes where the camera points, not where the wearer happens to be looking. The head turns
+    // the view on top of it while the eyes are drawn, as it does for the camera that follows
+    // the avatar; see SpatiandStereo::beginFrame.
     LLVector3 at(mat.mMatrix[0]);
     LLVector3 left(mat.mMatrix[1]);
     LLVector3 up(mat.mMatrix[2]);
@@ -1393,7 +1393,6 @@ void LLViewerJoystick::moveFlycam(bool reset)
         LLViewerCamera::getInstance()->setViewNoBroadcast(eye_view);
         LLViewerCamera::getInstance()->setAspect(eye_aspect);
     }
-    SpatiandStereo::turnByHead(at, left, up);
     LLViewerCamera::getInstance()->mXAxis = at;
     LLViewerCamera::getInstance()->mYAxis = left;
     LLViewerCamera::getInstance()->mZAxis = up;

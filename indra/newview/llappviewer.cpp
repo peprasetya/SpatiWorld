@@ -1784,6 +1784,7 @@ bool LLAppViewer::doFrame()
                 // copied into its half of the window; the window is shown once, after both.
                 // First, whatever spatiand-host has said since the last frame: the size to draw at.
                 SpatiandStereo::listen();
+                SpatiandStereo::beginFrame();
                 const S32 eyes = SpatiandStereo::eyeCount();
                 for (S32 eye = 0; eye < eyes; ++eye)
                 {
@@ -1793,6 +1794,7 @@ bool LLAppViewer::doFrame()
                     SpatiandStereo::endEye();
                 }
                 SpatiandStereo::setEye(SpatiandStereo::NO_EYE);
+                SpatiandStereo::endFrame();
                 SpatiandStereo::present();
 
                 if (LLStartUp::getStartupState() == STATE_STARTED) // <FS:Beq/> FIRE-34590 - Bugsplat caused by updating maps before world is loaded.
