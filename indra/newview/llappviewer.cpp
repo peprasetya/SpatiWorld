@@ -27,6 +27,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llappviewer.h"
+#include "spatiandstereo.h"
 
 // Viewer includes
 #include "llversioninfo.h"
@@ -1779,7 +1780,17 @@ bool LLAppViewer::doFrame()
                 pingMainloopTimeout("Main:Display");
                 gGLActive = true;
 
-                display();
+                // Once per eye spatiand asked for. Both are drawn into the one window,
+                // side by side, and only the last of them is shown.
+                for (S32 eye = 0; eye < SpatiandStereo::eyeCount(); ++eye)
+                {
+                    SpatiandStereo::setCurrentEye(eye);
+                    display();
+                }
+                // Back to the left eye for everything that is not drawing. Picking projects the
+                // mouse through whatever viewport was set last, and the right eye's sits half a
+                // window to the right; leaving it there would put every click in the wrong place.
+                SpatiandStereo::setCurrentEye(0);
 
                 if (LLStartUp::getStartupState() == STATE_STARTED) // <FS:Beq/> FIRE-34590 - Bugsplat caused by updating maps before world is loaded.
                 {

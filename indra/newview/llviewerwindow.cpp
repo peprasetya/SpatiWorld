@@ -26,6 +26,7 @@
 
 #include "llviewerprecompiledheaders.h"
 #include "llviewerwindow.h"
+#include "spatiandstereo.h"
 
 
 // system library includes
@@ -2756,6 +2757,16 @@ void LLViewerWindow::reshape(S32 width, S32 height)
     // may have been destructed.
     if (!LLApp::isExiting())
     {
+        // **Two eyes arrive as one wide window.** In side-by-side stereo the compositor
+        // hands back a window twice as wide as this viewer was laid out for. Halving it
+        // here is what lets everything downstream — rects, render targets, the UI, the
+        // picking maths — go on working in the size of one eye; only the viewport origin
+        // ever knows there are two.
+        if (SpatiandStereo::isStereo())
+        {
+            width /= 2;
+        }
+
         gWindowResized = true;
 
         // update our window rectangle
@@ -6882,7 +6893,7 @@ void LLViewerWindow::setup2DRender()
 
 void LLViewerWindow::setup2DViewport(S32 x_offset, S32 y_offset)
 {
-    gGLViewport[0] = mWindowRectRaw.mLeft + x_offset;
+    gGLViewport[0] = mWindowRectRaw.mLeft + x_offset + SpatiandStereo::viewportOffsetX(mWindowRectRaw.getWidth());
     gGLViewport[1] = mWindowRectRaw.mBottom + y_offset;
     gGLViewport[2] = mWindowRectRaw.getWidth();
     gGLViewport[3] = mWindowRectRaw.getHeight();
@@ -6900,7 +6911,7 @@ void LLViewerWindow::setup3DRender()
 void LLViewerWindow::setup3DViewport(S32 x_offset, S32 y_offset)
 {
     LL_PROFILE_ZONE_SCOPED_CATEGORY_UI;
-    gGLViewport[0] = mWorldViewRectRaw.mLeft + x_offset;
+    gGLViewport[0] = mWorldViewRectRaw.mLeft + x_offset + SpatiandStereo::viewportOffsetX(mWindowRectRaw.getWidth());
     gGLViewport[1] = mWorldViewRectRaw.mBottom + y_offset;
     gGLViewport[2] = mWorldViewRectRaw.getWidth();
     gGLViewport[3] = mWorldViewRectRaw.getHeight();

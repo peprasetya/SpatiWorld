@@ -28,6 +28,7 @@
 
 #define LLVIEWERCAMERA_CPP
 #include "llviewercamera.h"
+#include "spatiandstereo.h"
 
 // Viewer includes
 #include "llagent.h"
@@ -393,6 +394,19 @@ void LLViewerCamera::setPerspective(bool for_selection,
     getOpenGLTransform(ogl_matrix);
 
     modelview *= glm::make_mat4(ogl_matrix);
+
+    // **One eye at a time.** The eyes differ by a sideways step, taken here in eye space
+    // so that everything reading these matrices afterwards sees a camera that simply
+    // stands where that eye stands. Selection keeps the middle of the head: a pick is the
+    // wearer pointing at something, not either eye looking at it.
+    if (!for_selection)
+    {
+        F32 eye_shift = SpatiandStereo::currentEyeShift();
+        if (eye_shift != 0.f)
+        {
+            modelview = glm::translate(glm::vec3(-eye_shift, 0.f, 0.f)) * modelview;
+        }
+    }
 
     gGL.loadMatrix(glm::value_ptr(modelview));
 

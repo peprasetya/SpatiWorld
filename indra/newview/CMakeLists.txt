@@ -885,6 +885,7 @@ set(viewer_SOURCE_FILES
     llworldmapview.cpp
     llxmlrpclistener.cpp
     llxmlrpctransaction.cpp
+    spatiandstereo.cpp
     noise.cpp
     particleeditor.cpp
     permissionstracker.cpp
@@ -1742,6 +1743,7 @@ set(viewer_HEADER_FILES
     llworldmapview.h
     llxmlrpclistener.h
     llxmlrpctransaction.h
+    spatiandstereo.h
     noise.h
     particleeditor.h
     permissionstracker.h
