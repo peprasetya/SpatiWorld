@@ -1423,6 +1423,7 @@ void render_hud_attachments()
 
     if (LLPipeline::sShowHUDAttachments && !gDisconnected && setup_hud_matrices())
     {
+        SpatiandStereo::fitHudToCanvas(); // <SpatiWorld/>
         LLPipeline::sRenderingHUDs = true;
         LLCamera hud_cam = *LLViewerCamera::getInstance();
         hud_cam.setOrigin(-1.f, 0.f, 0.f);
@@ -1724,6 +1725,7 @@ void render_ui(F32 zoom_factor, int subfield)
                 SpatiandStereo::endUI();
             }
             SpatiandStereo::drawUI();
+            SpatiandStereo::drawCursor();
         }
         // </SpatiWorld>
 

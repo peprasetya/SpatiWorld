@@ -160,7 +160,9 @@ void LLScreenChannelBase::updatePositionAndSize(LLRect rect)
     case CA_LEFT :
         break;
     case CA_CENTRE :
-        this_rect.setCenterAndSize( (rect.getWidth()) / 2, rect.getHeight() / 2, this_rect.getWidth(), this_rect.getHeight());
+        // <SpatiWorld> The world view's own centre: it is not at 0,0 when the UI has a canvas
+        // around it, and a dialog centred on half its size lands on its left edge.
+        this_rect.setCenterAndSize(rect.getCenterX(), rect.getCenterY(), this_rect.getWidth(), this_rect.getHeight());
         break;
     case CA_RIGHT :
         this_rect.setLeftTopAndSize(rect.mRight - this_rect.getWidth(),
@@ -256,13 +258,17 @@ void LLScreenChannel::updatePositionAndSize(LLRect new_world_rect)
     switch(mChannelAlignment)
     {
     case CA_LEFT :
-        this_rect.mTop = (S32) (new_world_rect.getHeight() * getHeightRatio());
+        // <SpatiWorld> Measured from the world view's bottom, and at its left: see CA_CENTRE.
+        this_rect.setLeftTopAndSize(new_world_rect.mLeft,
+            new_world_rect.mBottom + (S32) (new_world_rect.getHeight() * getHeightRatio()),
+            this_rect.getWidth(),
+            this_rect.getHeight());
         break;
     case CA_CENTRE :
         LLScreenChannelBase::updatePositionAndSize(new_world_rect);
         return;
     case CA_RIGHT :
-        this_rect.mTop = (S32) (new_world_rect.getHeight() * getHeightRatio());
+        this_rect.mTop = new_world_rect.mBottom + (S32) (new_world_rect.getHeight() * getHeightRatio()); // <SpatiWorld/>
         this_rect.setLeftTopAndSize(new_world_rect.mRight - this_rect.getWidth(),
             this_rect.mTop,
             this_rect.getWidth(),
@@ -762,7 +768,7 @@ void LLScreenChannel::showToastsCentre()
     }
 
     LLRect  toast_rect;
-    S32     bottom = (getRect().mTop - getRect().mBottom)/2 + toast->getRect().getHeight()/2;
+    S32     bottom = getRect().getCenterY() + toast->getRect().getHeight()/2; // <SpatiWorld/> its centre, not half its height
     std::vector<ToastElem>::reverse_iterator it;
 
     for(it = mToastList.rbegin(); it != mToastList.rend(); ++it)

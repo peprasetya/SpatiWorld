@@ -1632,6 +1632,8 @@ void LLViewerWindow::handleResize(LLWindow *window,  S32 width,  S32 height)
     if (SpatiandStereo::isStereo())
     {
         width /= 2;
+        // And then laid out on a canvas bigger than the eye; see SpatiandStereo::canvasFor.
+        SpatiandStereo::canvasFor(width, height, width, height);
     }
     reshape(width, height);
     mResDirty = true;
@@ -2825,7 +2827,8 @@ void LLViewerWindow::reshape(S32 width, S32 height)
 
 //<FS:KC - fix for EXP-1777/EXP-1832>
         LLCoordScreen window_size;
-        if (!maximized
+        // <SpatiWorld> Not the double-width stereo window: the next login is a flat window.
+        if (!SpatiandStereo::isStereo() && !maximized
             && mWindow->getSize(&window_size))
 //      if (!maximized)
 //</FS:KC - fix for EXP-1777/EXP-1832>
@@ -2847,6 +2850,7 @@ void LLViewerWindow::reshape(S32 width, S32 height)
         sample(LLStatViewer::WINDOW_WIDTH, width);
         sample(LLStatViewer::WINDOW_HEIGHT, height);
 
+        SpatiandStereo::arrangeCanvas(); // <SpatiWorld/>
         LLLayoutStack::updateClass();
     }
 }
@@ -4509,6 +4513,13 @@ void LLViewerWindow::updateWorldViewRect(bool use_full_window)
     // start off using whole window to render world
     LLRect new_world_rect = mWindowRectRaw;
 
+    // <SpatiWorld> In stereo the world is the box in the middle of the canvas, always.
+    if (SpatiandStereo::isStereo())
+    {
+        new_world_rect = SpatiandStereo::boxRaw(mWindowRectRaw);
+    }
+    else
+    // </SpatiWorld>
     if (!use_full_window && mWorldViewPlaceholder.get())
     {
         new_world_rect = mWorldViewPlaceholder.get()->calcScreenRect();

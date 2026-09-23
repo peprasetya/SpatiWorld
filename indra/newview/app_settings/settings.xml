@@ -6613,6 +6613,28 @@
       <key>Value</key>
       <integer>1</integer>
     </map>
+    <key>SpatiWorldCanvasWidth</key>
+    <map>
+      <key>Comment</key>
+      <string>In stereo, how wide the UI canvas is, in views. The view is the box in its middle, where menus and dialogs stay; floaters and HUD attachments can go anywhere on the canvas. Takes effect on the next resize.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>2.0</real>
+    </map>
+    <key>SpatiWorldCanvasHeight</key>
+    <map>
+      <key>Comment</key>
+      <string>In stereo, how tall the UI canvas is, in views. See SpatiWorldCanvasWidth.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>1.6</real>
+    </map>
     <key>SpatiWorldPanelDistance</key>
     <map>
       <key>Comment</key>
@@ -6622,7 +6644,7 @@
       <key>Type</key>
       <string>F32</string>
       <key>Value</key>
-      <real>4.0</real>
+      <real>1.5</real>
     </map>
     <key>SpatiWorldFlycamButton</key>
     <map>
