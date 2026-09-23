@@ -425,10 +425,6 @@ void LLViewerCamera::setPerspective(bool for_selection,
     }
 
     gGL.loadMatrix(glm::value_ptr(modelview));
-    if (!for_selection && mZoomFactor == 1.f)
-    {
-        SpatiandStereo::noteEyeMatrices(glm::value_ptr(proj_mat), glm::value_ptr(modelview));
-    }
 
     if (for_selection && (width > 1 || height > 1))
     {

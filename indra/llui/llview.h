@@ -169,6 +169,11 @@ private:
 public:
 //#if LL_DEBUG
     static bool sIsDrawing;
+    // <SpatiWorld> Drawing the UI as separate layers: while set, drawChildren draws only the
+    // branch that leads to sDrawOnly (and all of it), or everything except sDrawSkip.
+    static LLView* sDrawOnly;
+    static LLView* sDrawSkip;
+    // </SpatiWorld>
 //#endif
     enum ESoundFlags
     {

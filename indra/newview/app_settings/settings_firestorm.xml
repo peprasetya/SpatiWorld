@@ -80,7 +80,7 @@
     <key>Type</key>
     <string>String</string>
     <key>Value</key>
-    <string>firestorm</string>
+    <string>spatiworld</string>
   </map>
 
   <key>SkinCurrentTheme</key>
@@ -92,7 +92,7 @@
     <key>Type</key>
     <string>String</string>
     <key>Value</key>
-    <string>grey</string>
+    <string>deep_glass</string>
   </map>
 
   <key>FSSkinCurrentReadableName</key>
@@ -106,7 +106,7 @@
     <key>Type</key>
     <string>String</string>
     <key>Value</key>
-    <string>Firestorm</string>
+    <string>SpatiWorld</string>
   </map>
 
   <key>FSSkinCurrentThemeReadableName</key>
@@ -120,7 +120,7 @@
     <key>Type</key>
     <string>String</string>
     <key>Value</key>
-    <string>Grey</string>
+    <string>Deep Glass</string>
   </map>
 
   <key>LetterKeysAffectsMovementNotFocusChatBar</key>
