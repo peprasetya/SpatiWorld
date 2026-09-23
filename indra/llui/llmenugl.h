@@ -608,6 +608,12 @@ private:
 
     static LLColor4 sDefaultBackgroundColor;
     static bool     sKeyboardMode;
+public:
+    // <SpatiWorld> Space above and below a menu item's label. Four pixels suits a mouse; in a
+    // headset a row is pointed at from a metre away and is made taller -- see SpatiandStereo.
+    static S32      sItemPadding;
+private:
+    // </SpatiWorld>
 
     bool            mAlwaysShowMenu;
 

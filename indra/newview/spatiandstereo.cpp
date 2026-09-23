@@ -42,6 +42,7 @@
 #include "llframetimer.h"
 #include "llview.h"
 #include "llrootview.h"
+#include "llmenugl.h"
 #include "v3math.h"
 
 #include <cmath>
@@ -64,7 +65,10 @@ const U8*             SpatiandStereo::sPoses = NULL;
 LLRenderTarget*       SpatiandStereo::sEyeTarget = NULL;
 LLRenderTarget*       SpatiandStereo::sUITarget = NULL;
 LLRenderTarget*       SpatiandStereo::sFloaterTarget = NULL;
+LLRenderTarget*       SpatiandStereo::sActiveTarget = NULL;
 bool                  SpatiandStereo::sFloatersDrawn = false;
+bool                  SpatiandStereo::sActiveDrawn = false;
+LLHandle<LLFloater>   SpatiandStereo::sActive;
 bool                  SpatiandStereo::sPointerOnFloaters = false;
 S32                   SpatiandStereo::sEyeWidth = 0;
 S32                   SpatiandStereo::sEyeHeight = 0;
@@ -258,6 +262,10 @@ void SpatiandStereo::detect()
     // two eyes of the size this viewer was already drawing.
     listen();
     askForSize();
+    // Menu rows a pointer can land on from a metre away. Read before the layout below, which
+    // is also what brings in the stereo UI scale (LLViewerWindow::calcDisplayScale).
+    LLMenuGL::sItemPadding = llclamp(gSavedSettings.getS32("SpatiWorldMenuPadding"), 4, 32);
+
     // And lay out for two eyes now, whether or not the window changes size: a window that is
     // already the size asked for -- the last session's, remembered -- sends no resize, and
     // without one the viewer would go on believing the whole double-width window is one eye.
@@ -699,7 +707,23 @@ bool SpatiandStereo::beginUI(ELayer layer)
     {
         return false;
     }
-    LLRenderTarget*& target = (layer == LAYER_FLOATERS) ? sFloaterTarget : sUITarget;
+    if (layer == LAYER_FLOATERS)
+    {
+        // Which floater is active is settled here, once, for the whole frame: the two floater
+        // layers and the cursor all have to agree on it.
+        LLFloater* active = findActiveFloater();
+        sActive = active ? active->getHandle() : LLHandle<LLFloater>();
+        // Until its own layer is drawn this frame, if it is.
+        sActiveDrawn = false;
+    }
+    if (layer == LAYER_ACTIVE && !sActive.get())
+    {
+        sActiveDrawn = false;
+        return false;
+    }
+    LLRenderTarget*& target = (layer == LAYER_FLOATERS) ? sFloaterTarget
+                            : (layer == LAYER_ACTIVE)   ? sActiveTarget
+                                                        : sUITarget;
     const U32 width = gViewerWindow->getWindowWidthRaw();
     const U32 height = gViewerWindow->getWindowHeightRaw();
     if (!target)
@@ -736,7 +760,9 @@ bool SpatiandStereo::beginUI(ELayer layer)
 void SpatiandStereo::endUI(ELayer layer)
 {
     LLView::sDrawSkip = NULL;
-    LLRenderTarget* target = (layer == LAYER_FLOATERS) ? sFloaterTarget : sUITarget;
+    LLRenderTarget* target = (layer == LAYER_FLOATERS) ? sFloaterTarget
+                           : (layer == LAYER_ACTIVE)   ? sActiveTarget
+                                                       : sUITarget;
     gGL.flush();
     // Is there UI under the pointer? One pixel, read while the layer's target is still bound:
     // the cursor goes on the nearest layer that has something there, into the world if none.
@@ -761,6 +787,10 @@ void SpatiandStereo::endUI(ELayer layer)
         sPointerOnFloaters = covered;
         sFloatersDrawn = true;
     }
+    else if (layer == LAYER_ACTIVE)
+    {
+        sActiveDrawn = true;
+    }
     else
     {
         sPointerOnUI = covered;
@@ -768,13 +798,60 @@ void SpatiandStereo::endUI(ELayer layer)
     }
 }
 
-void SpatiandStereo::drawFloaters()
+LLFloater* SpatiandStereo::findActiveFloater()
+{
+    if (!gFloaterView)
+    {
+        return NULL;
+    }
+    // A child of the floater view with focus anywhere inside it: a hosted floater's container
+    // counts, since the container is what stands out.
+    LLFloater* floater = gFloaterView->getFocusedFloater();
+    if (!floater || !floater->getVisible() || floater->isMinimized())
+    {
+        return NULL;
+    }
+    return floater;
+}
+
+LLFloater* SpatiandStereo::floaterAt(const LLCoordGL& mouse)
+{
+    if (!gFloaterView || !gFloaterView->getVisible())
+    {
+        return NULL;
+    }
+    for (LLView* view : *gFloaterView->getChildList())
+    {
+        LLFloater* floater = dynamic_cast<LLFloater*>(view);
+        if (floater && floater->getVisible() && floater->calcScreenRect().pointInRect(mouse.mX, mouse.mY))
+        {
+            return floater;
+        }
+    }
+    return NULL;
+}
+
+void SpatiandStereo::drawFloaters(ELayer layer)
 {
     if (!gFloaterView || !gViewerWindow)
     {
         return;
     }
-    // What LLViewerWindow::draw does for the whole UI, for one branch of it.
+    LLFloater* active = sActive.get();
+    if (layer == LAYER_ACTIVE && !active)
+    {
+        return;
+    }
+    // What render_ui_2d and LLViewerWindow::draw do for the whole UI, for one branch of it.
+    // The GL state first: without it blending is whatever the world left, and every
+    // transparent panel inside a floater overwrote the floater's own coverage with its zero
+    // alpha, so a focused window was see-through wherever it had an empty panel.
+    LLGLSUIDefault gls_ui;
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    // And alpha written: the HUD drawn just before switches it off on its way out, and a layer
+    // with no alpha has no coverage -- its colour is then simply added to the world, a pale
+    // haze where a window should be.
+    gGL.setColorMask(true, true);
     gViewerWindow->setup2DRender();
     LLView::sDirtyRect = gViewerWindow->getWindowRectScaled();
     LLView::sIsDrawing = true;
@@ -785,9 +862,18 @@ void SpatiandStereo::drawFloaters()
     gGL.loadIdentity();
     LLUI::pushMatrix();
     gGL.scaleUI(gViewerWindow->getDisplayScale().mV[VX], gViewerWindow->getDisplayScale().mV[VY], 1.f);
-    LLView::sDrawOnly = gFloaterView;
+    if (layer == LAYER_ACTIVE)
+    {
+        LLView::sDrawOnly = active;
+    }
+    else
+    {
+        LLView::sDrawOnly = gFloaterView;
+        LLView::sDrawSkip = active;
+    }
     gViewerWindow->getRootView()->draw();
     LLView::sDrawOnly = NULL;
+    LLView::sDrawSkip = NULL;
     LLUI::popMatrix();
     gGL.popMatrix();
     gUIProgram.unbind();
@@ -805,9 +891,14 @@ void SpatiandStereo::drawUI()
     // avatar, so the UI is never seen behind what it is about, and the chrome nearer still.
     static LLCachedControl<F32> panel_distance(gSavedSettings, "SpatiWorldPanelDistance", 1.5f);
     static LLCachedControl<F32> chrome_distance(gSavedSettings, "SpatiWorldChromeDistance", 1.2f);
+    static LLCachedControl<F32> active_distance(gSavedSettings, "SpatiWorldActiveDistance", 1.35f);
     if (sFloatersDrawn && sFloaterTarget)
     {
         drawLayer(sFloaterTarget, llclamp((F32)panel_distance, 0.5f, 100.f));
+    }
+    if (sActiveDrawn && sActiveTarget)
+    {
+        drawLayer(sActiveTarget, llclamp((F32)active_distance, 0.4f, 100.f));
     }
     if (sUIDrawn && sUITarget)
     {
@@ -1050,12 +1141,21 @@ void SpatiandStereo::drawCursor()
 
     static LLCachedControl<F32> panel_distance(gSavedSettings, "SpatiWorldPanelDistance", 1.5f);
     static LLCachedControl<F32> chrome_distance(gSavedSettings, "SpatiWorldChromeDistance", 1.2f);
+    static LLCachedControl<F32> active_distance(gSavedSettings, "SpatiWorldActiveDistance", 1.35f);
+    // On whatever is nearest under it. The chrome by what it drew there; a floater by its
+    // rectangle, so a see-through part of one still holds the cursor at the window's depth
+    // rather than letting it drop into the world behind; the HUD by what it drew.
+    LLFloater* floater = sPointerOnUI ? NULL : floaterAt(mouse);
     LLVector3 point;
     if (sPointerOnUI)
     {
         point = origin + along * llclamp((F32)chrome_distance, 0.4f, 100.f);
     }
-    else if (sPointerOnFloaters)
+    else if (floater && sActiveDrawn && floater == sActive.get())
+    {
+        point = origin + along * llclamp((F32)active_distance, 0.4f, 100.f);
+    }
+    else if (floater || sPointerOnFloaters)
     {
         point = origin + along * llclamp((F32)panel_distance, 0.5f, 100.f);
     }

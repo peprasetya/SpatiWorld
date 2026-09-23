@@ -6635,6 +6635,17 @@
       <key>Value</key>
       <real>1.6</real>
     </map>
+    <key>SpatiWorldActiveDistance</key>
+    <map>
+      <key>Comment</key>
+      <string>In stereo, how far in front of the aim the floater with focus stands, in metres: between the other floaters (SpatiWorldPanelDistance) and the chrome (SpatiWorldChromeDistance), so the window being worked in steps out towards the wearer.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>1.35</real>
+    </map>
     <key>SpatiWorldChromeDistance</key>
     <map>
       <key>Comment</key>
@@ -6646,6 +6657,17 @@
       <key>Value</key>
       <real>1.2</real>
     </map>
+    <key>SpatiWorldMenuPadding</key>
+    <map>
+      <key>Comment</key>
+      <string>In stereo, pixels of space above and below each menu item's label (4 on a flat screen): taller rows, easier to point at.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>S32</string>
+      <key>Value</key>
+      <integer>12</integer>
+    </map>
     <key>SpatiWorldPanelDistance</key>
     <map>
       <key>Comment</key>
@@ -6656,6 +6678,17 @@
       <string>F32</string>
       <key>Value</key>
       <real>1.5</real>
+    </map>
+    <key>SpatiWorldUIScale</key>
+    <map>
+      <key>Comment</key>
+      <string>In stereo, the UI scale, in place of UIScaleFactor: a pixel in the glasses is a far smaller angle than on a desk, and the UI is pointed at from a metre away.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>1.4</real>
     </map>
     <key>SpatiWorldFlycamButton</key>
     <map>

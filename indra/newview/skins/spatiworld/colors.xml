@@ -258,9 +258,9 @@
   <color name="TextFgColor" reference="White" />
   <color name="TextFgTentativeColor" reference="LtGray_50" />
   <color name="TextEmbeddedItemColor" reference="White" />
-  <color name="TextBgFocusColor" reference="Black" />
-  <color name="TextBgReadOnlyColor" reference="DkGray" />
-  <color name="TextBgWriteableColor" reference="DkGray" />
+  <color name="TextBgFocusColor" value="0.050 0.078 0.125 1.000" />
+  <color name="TextBgReadOnlyColor" value="0.040 0.058 0.092 1.000" />
+  <color name="TextBgWriteableColor" value="0.035 0.050 0.082 1.000" />
   <color name="TextCursorColor" reference="White" />
   <color name="TextDefaultColor" reference="White" />
   <color name="TextFgReadOnlyColor" reference="LtGray_50" />
@@ -277,7 +277,7 @@
   <color name="ScriptEditorTextRColor" reference="White" />
   <color name="ScriptEditorTextBgRColor" reference="TextBgWriteableColor" />
   <color name="CurrencyColor" reference="LabelTextColor" />
-  <color name="FSChatHistoryBackground" reference="DkGray" />
+  <color name="FSChatHistoryBackground" value="0.040 0.058 0.092 1.000" />
   <color name="ScriptSelectedColor" reference="EmphasisColor" />
   <color name="OutfitGalleryItemSelected" reference="EmphasisColor" />
   <color name="OutfitGalleryItemWorn" reference="EmphasisColor" />

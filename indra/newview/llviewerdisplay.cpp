@@ -1720,11 +1720,18 @@ void render_ui(F32 zoom_factor, int subfield)
             if (SpatiandStereo::beginUI(SpatiandStereo::LAYER_FLOATERS))
             {
                 render_hud_attachments();
+                // The HUD's passes leave alpha writes off; the layer is its alpha.
+                gGL.setColorMask(true, true);
                 if (render_ui)
                 {
-                    SpatiandStereo::drawFloaters();
+                    SpatiandStereo::drawFloaters(SpatiandStereo::LAYER_FLOATERS);
                 }
                 SpatiandStereo::endUI(SpatiandStereo::LAYER_FLOATERS);
+            }
+            if (render_ui && SpatiandStereo::beginUI(SpatiandStereo::LAYER_ACTIVE))
+            {
+                SpatiandStereo::drawFloaters(SpatiandStereo::LAYER_ACTIVE);
+                SpatiandStereo::endUI(SpatiandStereo::LAYER_ACTIVE);
             }
             if (SpatiandStereo::beginUI(SpatiandStereo::LAYER_CHROME))
             {

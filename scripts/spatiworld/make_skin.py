@@ -63,6 +63,11 @@ palette = {
     "ButtonLabelDisabledColor": rgba(0.50, 0.56, 0.64, 1),
     "ButtonLabelSelectedDisabledColor": rgba(0.55, 0.70, 0.78, 1),
     "ToolTipBgColor": rgba(0.060, 0.090, 0.140, 0.96),
+    # Text areas: a deeper well of the window's own navy, not the Dark theme's neutral grey.
+    "FSChatHistoryBackground": rgba(0.040, 0.058, 0.092, 1),
+    "TextBgReadOnlyColor": rgba(0.040, 0.058, 0.092, 1),
+    "TextBgWriteableColor": rgba(0.035, 0.050, 0.082, 1),
+    "TextBgFocusColor": rgba(0.050, 0.078, 0.125, 1),
     "ToolTipBorderColor": rgba(*ACCENT, 0.80),
     "ToolTipTextColor": rgba(*TEXT, 1),
     "EmphasisColor": rgba(*ACCENT, 1),
@@ -146,6 +151,34 @@ def tile(w, h, radius, top, bottom, rim, rim_width=1.0, highlight=0.10, header=N
     d.rounded_rectangle((0, 0, W - 1, H - 1), R, outline=c8(rim[:3], rim[3]), width=max(1, int(rim_width * SS)))
     return out.resize((w, h), Image.LANCZOS)
 
+def raised(w, h, radius, top, bottom, rim, sheen, lift=3, pressed=False):
+    """A tile standing up off the surface it is on: a soft shadow under it, a lit top edge and a
+    dark bottom one. Pressed, it sinks onto its shadow. The shadow is part of the texture, in the
+    margin under the cap, so the button's rectangle does not change."""
+    cap = bevel(tile(w, h - lift, radius, top, bottom, rim, 1.0, sheen), radius)
+    out = Image.new("RGBA", (w * SS, h * SS), (0, 0, 0, 0))
+    if not pressed:
+        shadow = Image.new("RGBA", (w * SS, h * SS), (0, 0, 0, 0))
+        ImageDraw.Draw(shadow).rounded_rectangle(
+            (SS, lift * SS, w * SS - 1 - SS, h * SS - 1), radius * SS, fill=(0, 0, 0, 150))
+        out = Image.alpha_composite(out, shadow.filter(ImageFilter.GaussianBlur(SS * 1.2)))
+    out = out.resize((w, h), Image.LANCZOS)
+    out.alpha_composite(cap, (0, lift if pressed else 0))
+    return out
+
+def bevel(img, radius):
+    """Light along the top edge, shade along the bottom: what makes a flat tile read as solid."""
+    w, h = img.size
+    lit = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(lit)
+    r = max(2, radius - 1)
+    d.line((r, 1, w - 1 - r, 1), fill=(255, 255, 255, 110), width=1)
+    d.line((r, h - 2, w - 1 - r, h - 2), fill=(0, 0, 0, 120), width=1)
+    mask = img.getchannel("A")
+    clipped = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    clipped.paste(lit, (0, 0), mask)
+    return Image.alpha_composite(img, clipped)
+
 def save(img, rel):
     path = GLASS / rel
     img.save(path)
@@ -174,9 +207,10 @@ BUTTONS = {
     "PushButton_Disabled":          ((0.13, 0.15, 0.19, 0.7), (0.10, 0.12, 0.16, 0.7), (0.45, 0.50, 0.56, 0.35), 0.0),
     "PushButton_Selected_Disabled": ((0.12, 0.28, 0.36, 0.7), (0.10, 0.22, 0.30, 0.7), (0.45, 0.60, 0.66, 0.40), 0.0),
 }
+# Raised: a shadow margin of three pixels under the cap, which the pressed states sink into.
 for name, (top, bottom, rim, sheen) in BUTTONS.items():
-    img = tile(32, 23, 6, top, bottom, rim, 1.0, sheen)
-    put_texture(name, save(img, f"{name}.png"), left=7, top=17, right=25, bottom=6)
+    img = raised(32, 24, 6, top, bottom, rim, sheen, pressed="Press" in name)
+    put_texture(name, save(img, f"{name}.png"), left=7, top=18, right=25, bottom=9)
 
 # Toolbar buttons: separate tiles that float, not segments of a flat strip.
 TOOLBAR = {
@@ -186,10 +220,10 @@ TOOLBAR = {
     "Flash":    ((0.70, 0.52, 0.12, 0.97), (0.55, 0.40, 0.08, 0.97), (1.00, 0.85, 0.40, 1.0), 0.16),
 }
 for state, (top, bottom, rim, sheen) in TOOLBAR.items():
-    img = tile(31, 25, 6, top, bottom, rim, 1.0, sheen)
+    img = raised(31, 26, 6, top, bottom, rim, sheen, pressed=(state == "Selected"))
     rel = save(img, f"Toolbar_{state}.png")
     for pos in ("Left", "Middle", "Right"):
-        put_texture(f"Toolbar_{pos}_{state}", rel, left=7, top=19, right=24, bottom=6)
+        put_texture(f"Toolbar_{pos}_{state}", rel, left=7, top=19, right=24, bottom=9)
 
 ET.indent(tex_tree, space="  ")
 tex_tree.write(OUT / "textures" / "textures.xml", encoding="utf-8", xml_declaration=True)
