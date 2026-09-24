@@ -65,7 +65,7 @@ class FSViewerManifest:
         metadata_file = os.getenv("CODESIGNING_METADATA_PATH")
         # at some point we might want to sign other DLLs as well.
         executable_paths = [
-            # self.args['configuration'] + "\\firestorm-bin.exe", # no need to sign this we are not packaging it.
+            # self.args['configuration'] + "\\spatiworld-bin.exe", # no need to sign this we are not packaging it.
             self.args['configuration'] + "\\slplugin.exe",
             self.args['configuration'] + "\\SLVoice.exe",
             self.args['configuration'] + "\\llwebrtc.dll",
@@ -136,14 +136,14 @@ class FSViewerManifest:
     def fs_save_windows_symbols(self):
         self.fs_save_symbols("windows")
 
-        pdbName = "firestorm-bin.pdb"
+        pdbName = "spatiworld-bin.pdb"
         try:
             subprocess.check_call( [ "pdbcopy.exe" ,
-                                     self.args['configuration'] + "\\firestorm-bin.pdb", 
-                                     self.args['configuration'] + "\\firestorm-bin-public.pdb",
+                                     self.args['configuration'] + "\\spatiworld-bin.pdb", 
+                                     self.args['configuration'] + "\\spatiworld-bin-public.pdb",
                                      "-p"
                                  ], stderr=subprocess.PIPE,stdout=subprocess.PIPE )
-            pdbName = "firestorm-bin-public.pdb"
+            pdbName = "spatiworld-bin-public.pdb"
         except:
             print("Cannot run pdbcopy, packaging private symbols")
 
@@ -154,7 +154,7 @@ class FSViewerManifest:
                                                                         self.address_size)                                      
         # Store windows symbols we want to keep for debugging in a tar file.
         symbolTar = tarfile.open( name=tarName, mode="w:xz")
-        symbolTar.add( "%s/Firestorm-bin.exe" % self.args['configuration'].lower(), "firestorm-bin.exe" )
+        symbolTar.add( "%s/SpatiWorld-bin.exe" % self.args['configuration'].lower(), "spatiworld-bin.exe" )
         symbolTar.add( "%s/build_data.json" % self.args['configuration'].lower(), "build_data.json" )
         symbolTar.add( "%s/%s" % (self.args['configuration'].lower(),pdbName), pdbName )
         symbolTar.close()
