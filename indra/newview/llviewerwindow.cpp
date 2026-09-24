@@ -3790,8 +3790,14 @@ void LLViewerWindow::moveCursorToCenter()
 
     if (mouse_warp)
     {
-        S32 x = getWorldViewWidthScaled() / 2;
-        S32 y = getWorldViewHeightScaled() / 2;
+        // <SpatiWorld> The world view's own middle, wherever it is in the window: in stereo it
+        // is a box in the middle of a wider canvas, and half its width from the window's corner
+        // is far off to the side of it. And in stereo, the middle of what the wearer is
+        // looking at, which the aim's box need not be.
+        S32 x = getWorldViewRectScaled().getCenterX();
+        S32 y = getWorldViewRectScaled().getCenterY();
+        SpatiandStereo::viewCentre(x, y);
+        // </SpatiWorld>
 
         LLUI::getInstance()->setMousePositionScreen(x, y);
 

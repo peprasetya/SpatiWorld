@@ -755,21 +755,55 @@ bool SpatiandStereo::mapCursor(S32& x, S32& y, bool to_layout)
     // a click past the edge of the panel still casts the right ray into the world.
     const F32 tan_v = tanf(sFrameView * 0.5f);
     const F32 tan_h = tan_v * sFrameAspect;
-    if (to_layout)
+    // **Steering by the mouse.** An application that steers by the mouse -- the Alt-drag
+    // camera, mouselook -- hides the cursor, puts it back where it started after every
+    // movement and reads only how far it went. Two things made that run away here:
+    //
+    // - Out through this mapping and back in, rounded to whole pixels both ways, "where it
+    //   started" came back a pixel or more off: a movement every frame with the pointer still.
+    // - The pointer is fixed to the head, so the same pixel is a different place on the canvas
+    //   whenever the head moves, and every tremor of it was a drag -- each degree of the head
+    //   about nine of the camera.
+    //
+    // So a warp is remembered, with the head as it was then, and while the cursor stays
+    // hidden a position is read against both: the warp's own pixel is the warp's own place,
+    // exactly, and only what the pointer itself does is movement.
+    static bool anchored = false;
+    static S32 anchor_view_x = 0, anchor_view_y = 0;
+    static F32 anchor_canvas_x = 0.f, anchor_canvas_y = 0.f;
+    static LLVector3 anchor_at, anchor_left, anchor_up;
+    auto view_to_canvas = [&](F32 vx, F32 vy, const LLVector3& at, const LLVector3& left,
+                              const LLVector3& up, F32& cx, F32& cy)
     {
         // Window coordinates: x from the left, y from the top.
-        const F32 tx = (((F32)x + 0.5f) / width * 2.f - 1.f) * tan_h;
-        const F32 ty = (1.f - ((F32)y + 0.5f) / height * 2.f) * tan_v;
-        const LLVector3 d = sViewAt - sViewLeft * tx + sViewUp * ty;
+        const F32 tx = ((vx + 0.5f) / width * 2.f - 1.f) * tan_h;
+        const F32 ty = (1.f - (vy + 0.5f) / height * 2.f) * tan_v;
+        const LLVector3 d = at - left * tx + up * ty;
+        return aimToCanvas(d * sAimAt, -(d * sAimLeft), d * sAimUp, cx, cy);
+    };
+    if (to_layout)
+    {
+        const bool steering = anchored && gViewerWindow->getCursorHidden();
+        const LLVector3& at = steering ? anchor_at : sViewAt;
+        const LLVector3& left = steering ? anchor_left : sViewLeft;
+        const LLVector3& up = steering ? anchor_up : sViewUp;
         F32 cx, cy;
-        if (!aimToCanvas(d * sAimAt, -(d * sAimLeft), d * sAimUp, cx, cy))
+        if (!view_to_canvas((F32)x, (F32)y, at, left, up, cx, cy))
         {
             return false;
+        }
+        F32 ax, ay;
+        if (steering && view_to_canvas((F32)anchor_view_x, (F32)anchor_view_y, at, left, up, ax, ay))
+        {
+            cx = anchor_canvas_x + (cx - ax);
+            cy = anchor_canvas_y + (cy - ay);
         }
         x = ll_round(cx - 0.5f);
         y = ll_round(canvas_height - cy - 0.5f);
         return true;
     }
+    const F32 warp_canvas_x = (F32)x + 0.5f;
+    const F32 warp_canvas_y = canvas_height - ((F32)y + 0.5f);
     F32 forward, right, up;
     if (!canvasToAim((F32)x + 0.5f, canvas_height - ((F32)y + 0.5f), forward, right, up))
     {
@@ -782,10 +816,40 @@ bool SpatiandStereo::mapCursor(S32& x, S32& y, bool to_layout)
         // Behind the view: there is no pixel of it there.
         return false;
     }
-    const F32 ux = -(d * sViewLeft) / along / tan_h;
-    const F32 uy = (d * sViewUp) / along / tan_v;
+    // Kept inside the view: a warp past its edge would leave the pointer against it, and
+    // every further movement that way would be lost.
+    const F32 ux = llclamp(-(d * sViewLeft) / along / tan_h, -0.98f, 0.98f);
+    const F32 uy = llclamp((d * sViewUp) / along / tan_v, -0.98f, 0.98f);
     x = ll_round((ux + 1.f) * 0.5f * width - 0.5f);
     y = ll_round((1.f - uy) * 0.5f * height - 0.5f);
+    anchored = true;
+    anchor_view_x = x;
+    anchor_view_y = y;
+    anchor_canvas_x = warp_canvas_x;
+    anchor_canvas_y = warp_canvas_y;
+    anchor_at = sViewAt;
+    anchor_left = sViewLeft;
+    anchor_up = sViewUp;
+    return true;
+}
+
+bool SpatiandStereo::viewCentre(S32& x, S32& y)
+{
+    if (!isStereo() || !sFrameKnown || !gViewerWindow)
+    {
+        return false;
+    }
+    const LLRect box = gViewerWindow->getWorldViewRectRaw();
+    S32 cx = box.getWidth() / 2;
+    S32 cy = box.getHeight() / 2;
+    if (!mapCursor(cx, cy, true))
+    {
+        return false;
+    }
+    // Window coordinates from the top, raw, to UI coordinates from the bottom, scaled.
+    const LLVector2 scale = gViewerWindow->getDisplayScale();
+    x = ll_round(cx / scale.mV[VX]);
+    y = ll_round((gViewerWindow->getWindowHeightRaw() - cy) / scale.mV[VY]);
     return true;
 }
 
