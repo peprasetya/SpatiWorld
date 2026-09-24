@@ -1309,6 +1309,49 @@ void LLViewerJoystick::moveFlycam(bool reset)
     bool absolute = gSavedSettings.getBOOL("Cursor3D");
     bool is_zero = true;
 
+    // <SpatiWorld> **A flycam that leaves.** Cursor3D, on by default, is for a 3D mouse: the
+    // cap's *displacement* is the movement, so the camera went as far as the stick was pushed
+    // and came back as far when it was let go -- two metres out and two back, never further,
+    // which is a flycam on a leash to wherever it started. Walking already asks the device
+    // whether it really is absolute; the flycam never did. Under spatiand the controller is a
+    // gamepad, so its sticks are rates: held over, the camera keeps going. The saved scales
+    // were tuned for displacement and are tiny as rates, so the speeds are SpatiWorld's own
+    // -- SpatiWorldFlycamSpeed metres a second and SpatiWorldFlycamTurn degrees a second at
+    // full stick, the directions still the saved scales' signs -- and a stick held over
+    // gathers speed, up to four times over three seconds, so distance costs little time and a
+    // nudge stays a nudge.
+    if (SpatiandStereo::isRemote())
+    {
+        absolute = false;
+        static LLCachedControl<F32> fly_speed(gSavedSettings, "SpatiWorldFlycamSpeed", 6.f);
+        static LLCachedControl<F32> fly_turn(gSavedSettings, "SpatiWorldFlycamTurn", 70.f);
+        static LLFrameTimer pushing;
+        F32 push = 0.f;
+        for (U32 i = 0; i < 3; i++)
+        {
+            push = llmax(push, fabsf(getJoystickAxis(axis[i])));
+        }
+        if (push < 0.5f)
+        {
+            pushing.reset();
+        }
+        const F32 boost = 1.f + 3.f * llclamp(pushing.getElapsedTimeF32() / 3.f, 0.f, 1.f);
+        for (U32 i = 0; i < 3; i++)
+        {
+            axis_scale[i] = (axis_scale[i] < 0.f ? -1.f : 1.f) * llmax((F32)fly_speed, 0.f) * boost;
+        }
+        for (U32 i = 4; i < 6; i++)
+        {
+            if (axis_scale[i] != 0.f)
+            {
+                axis_scale[i] = (axis_scale[i] < 0.f ? -1.f : 1.f) * llmax((F32)fly_turn, 0.f) * DEG_TO_RAD;
+            }
+        }
+        // The field of view is the glasses' while drawing two eyes; nothing to zoom.
+        axis_scale[6] = 0.f;
+    }
+    // </SpatiWorld>
+
     for (U32 i = 0; i < 7; i++)
     {
         cur_delta[i] = -getJoystickAxis(axis[i]);
