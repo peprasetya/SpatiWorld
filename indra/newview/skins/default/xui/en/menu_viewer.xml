@@ -2550,126 +2550,8 @@
         </menu_item_call>        
     </menu>
     
-    <!-- Content Menu -->
     
-    <menu
-    	create_jump_keys="true"
-    	label="Content"
-    	name="Content"
-    	tear_off="true"
-        visible="true">
-<!--
-        <menu_item_call
-             label="Search"
-             name="Search">
-             <menu_item_call.on_click
-                 function="Avatar.ToggleSearch"/>
-       </menu_item_call>
--->
-        <menu_item_check
-        label="Search"
-        name="Search"
-        shortcut="control|F">
-            <menu_item_check.on_check
-             function="Avatar.SearchVisible"/>
-            <menu_item_check.on_click
-             function="Avatar.ToggleSearch"/>
-            </menu_item_check>
-
-    	<menu_item_call
-             label="SL Marketplace"
-             name="SL Marketplace">
-            <menu_item_call.on_click
-             function="LoadSLMarketplace"/>
-            <menu_item_call.on_visible
-             function="GridCheck"
-             parameter="secondlife"/>
-       </menu_item_call>
-       <menu_item_call
-             label="L$ Market Data"
-             name="LindenXchange">
-            <menu_item_call.on_click
-             function="PromptShowURL"
-             name="lindenxchange_url"
-             parameter="WebLaunchExternalTarget,https://secondlife.com/my/lindex/market.php" />
-            <menu_item_call.on_visible
-             function="GridCheck"
-             parameter="secondlife"/>
-       </menu_item_call>
-    	<menu_item_call
-             label="Script Library"
-             name="Script Library">
-             <menu_item_call.on_click
-             function="PromptShowURL"
-             name="script_library_url"
-             parameter="WebLaunchExternalTarget,https://wiki.secondlife.com/wiki/LSL_Library" />
-       </menu_item_call>
-    	<menu_item_call
-             label="SL Community (blogs, forums, news)"
-             name="SL Community Pages">
-             <menu_item_call.on_click
-             function="PromptShowURL"
-             name="community_pages_url"
-             parameter="WebLaunchExternalTarget,https://community.secondlife.com" />
-       </menu_item_call>
-       <menu_item_separator/>
-    	<menu_item_call
-             label="Firestorm Blog"
-             name="Firestorm Blog">
-             <menu_item_call.on_click
-             function="PromptShowURL"
-             name="firestorm_blog_url"
-             parameter="WebLaunchExternalTarget,https://www.firestormviewer.org/" />
-       </menu_item_call>
-    	<menu_item_call
-             label="Firestorm Primfeed"
-             name="Firestorm Primfeed">
-             <menu_item_call.on_click
-             function="PromptShowURL"
-             name="firestorm_primfeed_url"
-             parameter="WebLaunchExternalTarget,https://www.primfeed.com/firestorm-viewer" />
-       </menu_item_call>
-    	<menu_item_call
-             label="Firestorm Flickr"
-             name="Firestorm Flickr">
-             <menu_item_call.on_click
-             function="PromptShowURL"
-             name="firestorm_flickr_url"
-             parameter="WebLaunchExternalTarget,http://www.flickr.com/groups/firestormviewer/pool/" />
-       </menu_item_call>
-    	<menu_item_call
-             label="Firestorm YouTube"
-             name="Firestorm YouTube">
-             <menu_item_call.on_click
-             function="PromptShowURL"
-             name="firestorm_youtube_url"
-             parameter="WebLaunchExternalTarget,http://www.youtube.com/user/PhoenixViewerSL" />
-       </menu_item_call>
-    	<menu_item_call
-             label="Firestorm Twitter"
-             name="Firestorm Twitter">
-             <menu_item_call.on_click
-             function="PromptShowURL"
-             name="firestorm_twitter_url"
-             parameter="WebLaunchExternalTarget,https://twitter.com/phoenixviewersl" />
-       </menu_item_call>
-    	<menu_item_call
-             label="Firestorm Plurk"
-             name="Firestorm Plurk">
-             <menu_item_call.on_click
-             function="PromptShowURL"
-             name="firestorm_plurk_url"
-             parameter="WebLaunchExternalTarget,http://www.plurk.com/ThePhoenixViewerProject" />
-       </menu_item_call>
-       <menu_item_separator/>
-       <menu_item_call
-             label="Message of the day"
-             name="Firestorm MoTD">
-             <menu_item_call.on_click
-             function="Advanced.ToggleHUDInfo"
-             parameter="motd" />
-       </menu_item_call>
-      </menu>   
+   
     
     <!-- Help Menu -->
     
@@ -2708,34 +2590,8 @@
              parameter="WebLaunchExternalTarget,https://wiki.firestormviewer.org/firestorm_troubleshooting" />
         </menu_item_call>
 	   
-        <menu_item_call
-         label="Join Firestorm Support Group"
-         name="firestorm_support_group">
-            <menu_item_call.on_click
-             function="Advanced.WebBrowserTest"
-             parameter="https://wiki.firestormviewer.org/firestorm_support_groups_join" />
-            <menu_item_call.on_visible
-             function="GridCheck"
-             parameter="secondlife" />
-        </menu_item_call>
 
-        <menu_item_call
-         label="Firestorm Classes Schedule"
-         name="Firestorm Classes Schedule">
-             <menu_item_call.on_click
-             function="PromptShowURL"
-             name="wiki_classes_url"
-             parameter="WebLaunchExternalTarget,https://wiki.firestormviewer.org/firestorm_classes" />
-        </menu_item_call>
 
-        <menu_item_call
-         label="Firestorm Events Calendar"
-         name="Firestorm Events Calendar">
-             <menu_item_call.on_click
-             function="PromptShowURL"
-             name="events_calendar_url"
-             parameter="WebLaunchExternalTarget,https://teamup.com/ksxdajnbw9mvw7cbwz" />
-        </menu_item_call>
 
         <menu_item_check
          label="Guidebook"
