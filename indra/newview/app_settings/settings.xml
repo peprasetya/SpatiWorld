@@ -6657,6 +6657,28 @@
       <key>Value</key>
       <real>1.2</real>
     </map>
+    <key>SpatiWorldFlycamSpeed</key>
+    <map>
+      <key>Comment</key>
+      <string>Under spatiand, how fast the flycam flies at full stick, metres a second. A stick held over gathers speed on top of this, up to four times over three seconds.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>6.0</real>
+    </map>
+    <key>SpatiWorldFlycamTurn</key>
+    <map>
+      <key>Comment</key>
+      <string>Under spatiand, how fast the flycam turns at full stick, degrees a second. The head turns the view on top of it.</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>F32</string>
+      <key>Value</key>
+      <real>70.0</real>
+    </map>
     <key>SpatiWorldMenuPadding</key>
     <map>
       <key>Comment</key>
