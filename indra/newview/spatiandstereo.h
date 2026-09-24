@@ -133,6 +133,9 @@ public:
     // Map the pointer between the view that is shown and the aim the UI is laid out in:
     // LLWindow::sCursorMap while drawing two eyes. Window coordinates, one eye wide.
     static bool mapCursor(S32& x, S32& y, bool to_layout);
+    // Where the middle of what the wearer sees is in the layout, scaled UI coordinates from
+    // the bottom: where a warp to "the centre" belongs. See LLViewerWindow::moveCursorToCenter.
+    static bool viewCentre(S32& x, S32& y);
 
     // **The canvas is a cylinder.** Around the wearer, at each layer's distance, with the box
     // in the middle of it facing the aim: across, a canvas pixel is an angle, so a window moved
