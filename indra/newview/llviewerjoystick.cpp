@@ -1131,6 +1131,33 @@ void LLViewerJoystick::moveAvatar(bool reset)
         dom_axis = Z_I;
     }
 
+    // <SpatiWorld> **With the camera on something else, the sticks move the camera.** Alt-click
+    // (or a double-click, or a script) takes the camera off the avatar and onto a point; until
+    // Escape brings it back, walking would only snap it home and lose what was being looked
+    // at. So the sticks orbit that point instead, the way Alt and the arrow keys do: across
+    // on either stick goes round it, the left stick forward and back goes in and out, and the
+    // right stick forward and back goes over and under. Each in the direction the same stick
+    // would have walked or turned the avatar, so an inverted axis stays inverted.
+    if (!gAgentCamera.getFocusOnAvatar() && !gAgentCamera.cameraMouselook())
+    {
+        auto along = [&](U32 i)
+        {
+            // The walking direction, and how far the stick is pushed, 0..1.
+            return llclamp(-cur_delta[i] * (axis_scale[i] < 0.f ? -1.f : 1.f), -1.f, 1.f);
+        };
+        const F32 across = along(X_I) + along(RY_I);   // < 0: left
+        const F32 push = along(Z_I);                   // < 0: forward
+        const F32 over = along(RX_I);                  // < 0: looking down
+        if (across < 0.f) gAgentCamera.setOrbitLeftKey(llmin(-across, 1.f));
+        if (across > 0.f) gAgentCamera.setOrbitRightKey(llmin(across, 1.f));
+        if (push < 0.f) gAgentCamera.setOrbitInKey(-push);
+        if (push > 0.f) gAgentCamera.setOrbitOutKey(push);
+        if (over < 0.f) gAgentCamera.setOrbitUpKey(-over);
+        if (over > 0.f) gAgentCamera.setOrbitDownKey(over);
+        return;
+    }
+    // </SpatiWorld>
+
     sDelta[X_I] = -cur_delta[X_I] * axis_scale[X_I];
     sDelta[Y_I] = -cur_delta[Y_I] * axis_scale[Y_I];
     sDelta[Z_I] = -cur_delta[Z_I] * axis_scale[Z_I];
