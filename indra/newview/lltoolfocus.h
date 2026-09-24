@@ -41,6 +41,8 @@ public:
     virtual bool    handleMouseDown(S32 x, S32 y, MASK mask) override;
     virtual bool    handleMouseUp(S32 x, S32 y, MASK mask) override;
     virtual bool    handleHover(S32 x, S32 y, MASK mask) override;
+    // <SpatiWorld> The wheel zooms during a drag, as it does without one.
+    virtual bool    handleScrollWheel(S32 x, S32 y, S32 clicks) override;
     virtual bool    handleRightMouseDown(S32 x, S32 y, MASK mask) override;//<FS:JL> Mouse movement by Singularity
     virtual bool    handleRightMouseUp(S32 x, S32 y, MASK mask) override;//<FS:JL> Mouse movement by Singularity
 

@@ -343,6 +343,22 @@ bool LLToolCamera::handleMouseUp(S32 x, S32 y, MASK mask)
 
 static bool right_hold_mouse_walk = false;//<FS:JL> Mouse movement by Singularity
 
+// <SpatiWorld> **The wheel while the camera is being dragged.** An Alt or Alt-Ctrl drag takes the
+// mouse, and a captor gets the wheel first -- which this tool ignored, so the one thing a hand
+// on a mouse does alongside dragging, zooming, stopped working for as long as the drag lasted.
+// Under spatiand the left pad is the wheel, so the left thumb zooms while the right one orbits.
+// The drag itself is unchanged: Alt still orbits and zooms, Alt-Ctrl still orbits and pitches.
+bool LLToolCamera::handleScrollWheel(S32 x, S32 y, S32 clicks)
+{
+    if (!hasMouseCapture() || !mValidClickPoint)
+    {
+        return false;
+    }
+    gAgentCamera.handleScrollWheel(clicks);
+    return true;
+}
+// </SpatiWorld>
+
 bool LLToolCamera::handleHover(S32 x, S32 y, MASK mask)
 {
     //<FS:JL> Mouse movement by Singularity
