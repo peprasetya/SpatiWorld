@@ -15,11 +15,11 @@ RUN_PATH=`dirname "$0" || echo .`
 #cd "${RUN_PATH}/.."
 ch "${RUN_PATH}"
 
-#exec ./firestorm -url \'"${URL}"\'
-if [ `pidof do-not-directly-run-firestorm-bin` ]; then
+#exec ./spatiworld -url \'"${URL}"\'
+if [ `pidof do-not-directly-run-spatiworld-bin` ]; then
 	exec dbus-send --type=method_call --dest=com.secondlife.ViewerAppAPIService /com/secondlife/ViewerAppAPI com.secondlife.ViewerAppAPI.GoSLURL string:"$1"
 else
-	exec ../firestorm -url \'"${URL}"\'
+	exec ../spatiworld -url \'"${URL}"\'
 fi
 `
 
