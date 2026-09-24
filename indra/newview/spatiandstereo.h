@@ -134,6 +134,20 @@ public:
     // LLWindow::sCursorMap while drawing two eyes. Window coordinates, one eye wide.
     static bool mapCursor(S32& x, S32& y, bool to_layout);
 
+    // **The canvas is a cylinder.** Around the wearer, at each layer's distance, with the box
+    // in the middle of it facing the aim: across, a canvas pixel is an angle, so a window moved
+    // out to the side stays as near and as big as it was in front instead of receding along a
+    // flat plane; up and down it is straight. Every conversion between a place on the canvas
+    // and a direction goes through these two, so the panel, the cursor, the pointer and a pick
+    // into the world all agree. Raw canvas pixels, y from the bottom; the direction is in the
+    // aim's frame -- along it, to its right, up -- with the level part of unit length, so a
+    // point on a layer is simply the direction times the layer's distance.
+    static bool canvasToAim(F32 x, F32 y, F32& forward, F32& right, F32& up);
+    static bool aimToCanvas(F32 forward, F32 right, F32 up, F32& x, F32& y);
+    // A pick's direction for a place in the layout, in the agent's frame: what
+    // LLViewerWindow::mouseDirectionGlobal gives in stereo. Scaled UI coordinates.
+    static bool layoutDirection(S32 x, S32 y, LLVector3& direction);
+
     // **The UI is a panel in front of the aim.** Menus, floaters and HUD attachments are drawn
     // once a frame into a target of their own, laid out exactly as on a flat screen, and that
     // target is set in the world in front of the aim, filling the view the aim has. Each eye

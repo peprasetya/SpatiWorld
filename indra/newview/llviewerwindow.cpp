@@ -5673,6 +5673,16 @@ LLViewerObject* LLViewerWindow::cursorIntersect(S32 mouse_x, S32 mouse_y, F32 de
 // indicating direction of point on screen x,y
 LLVector3 LLViewerWindow::mouseDirectionGlobal(const S32 x, const S32 y) const
 {
+    // <SpatiWorld> In stereo the layout is a cylinder around the aim, not a plane: see
+    // SpatiandStereo::canvasToAim.
+    {
+        LLVector3 direction;
+        if (SpatiandStereo::layoutDirection(x, y, direction))
+        {
+            return direction;
+        }
+    }
+    // </SpatiWorld>
     // find vertical field of view
     F32         fov = LLViewerCamera::getInstance()->getView();
 
@@ -5717,6 +5727,21 @@ LLVector3 LLViewerWindow::mousePointHUD(const S32 x, const S32 y) const
 // indicating direction of point on screen x,y
 LLVector3 LLViewerWindow::mouseDirectionCamera(const S32 x, const S32 y) const
 {
+    // <SpatiWorld> The same direction as mouseDirectionGlobal, in the camera's own frame.
+    {
+        LLVector3 direction;
+        if (SpatiandStereo::layoutDirection(x, y, direction))
+        {
+            LLViewerCamera* camera = LLViewerCamera::getInstance();
+            const F32 forward = direction * camera->getAtAxis();
+            if (forward > 1e-4f)
+            {
+                return LLVector3(-(direction * camera->getLeftAxis()) / forward,
+                                 (direction * camera->getUpAxis()) / forward, -1.f);
+            }
+        }
+    }
+    // </SpatiWorld>
     // find vertical field of view
     F32         fov_height = LLViewerCamera::getInstance()->getView();
     F32         fov_width = fov_height * LLViewerCamera::getInstance()->getAspect();
