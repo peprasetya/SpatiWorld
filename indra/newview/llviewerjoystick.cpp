@@ -1134,10 +1134,12 @@ void LLViewerJoystick::moveAvatar(bool reset)
     // <SpatiWorld> **With the camera on something else, the sticks move the camera.** Alt-click
     // (or a double-click, or a script) takes the camera off the avatar and onto a point; until
     // Escape brings it back, walking would only snap it home and lose what was being looked
-    // at. So the sticks orbit that point instead, the way Alt and the arrow keys do: across
-    // on either stick goes round it, the left stick forward and back goes in and out, and the
-    // right stick forward and back goes over and under. Each in the direction the same stick
-    // would have walked or turned the avatar, so an inverted axis stays inverted.
+    // at. So the sticks move the camera instead: the left stick across pans it sideways with
+    // its focus, as walking sideways would have; forward and back goes in and out; the right
+    // stick across goes round the point and forward and back over and under it, the way Alt
+    // and the arrow keys do. Each in the direction the same stick would have walked or turned
+    // the avatar, so an inverted axis stays inverted. Page Up and Page Down pan up and down;
+    // see spatiworld_camera_up_down in llviewerinput.cpp.
     if (!gAgentCamera.getFocusOnAvatar() && !gAgentCamera.cameraMouselook())
     {
         auto along = [&](U32 i)
@@ -1145,11 +1147,14 @@ void LLViewerJoystick::moveAvatar(bool reset)
             // The walking direction, and how far the stick is pushed, 0..1.
             return llclamp(-cur_delta[i] * (axis_scale[i] < 0.f ? -1.f : 1.f), -1.f, 1.f);
         };
-        const F32 across = along(X_I) + along(RY_I);   // < 0: left
+        const F32 slide = along(X_I);                  // < 0: left
+        const F32 across = along(RY_I);                // < 0: turning left
         const F32 push = along(Z_I);                   // < 0: forward
         const F32 over = along(RX_I);                  // < 0: looking down
-        if (across < 0.f) gAgentCamera.setOrbitLeftKey(llmin(-across, 1.f));
-        if (across > 0.f) gAgentCamera.setOrbitRightKey(llmin(across, 1.f));
+        if (slide < 0.f) gAgentCamera.setPanLeftKey(-slide);
+        if (slide > 0.f) gAgentCamera.setPanRightKey(slide);
+        if (across < 0.f) gAgentCamera.setOrbitLeftKey(-across);
+        if (across > 0.f) gAgentCamera.setOrbitRightKey(across);
         if (push < 0.f) gAgentCamera.setOrbitInKey(-push);
         if (push > 0.f) gAgentCamera.setOrbitOutKey(push);
         if (over < 0.f) gAgentCamera.setOrbitUpKey(-over);
@@ -1369,6 +1374,13 @@ void LLViewerJoystick::moveFlycam(bool reset)
     }
 
     sFlycamPosition += LLVector3d(sDelta[VX], sDelta[VY], sDelta[VZ]) * sFlycamRotation;
+    // <SpatiWorld> Straight up or down, at the flycam's up/down speed; see setFlycamRise.
+    if (mFlycamRise != 0.f)
+    {
+        sFlycamPosition.mdV[VZ] += mFlycamRise * llmax(fabsf(axis_scale[VZ]), 1.f) * time;
+        mFlycamRise = 0.f;
+    }
+    // </SpatiWorld>
 
     LLMatrix3 rot_mat(sDelta[3], sDelta[4], sDelta[5]);
     sFlycamRotation = LLQuaternion(rot_mat)*sFlycamRotation;

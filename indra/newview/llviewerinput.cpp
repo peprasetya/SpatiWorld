@@ -33,6 +33,7 @@
 #include "llmath.h"
 #include "llagent.h"
 #include "llagentcamera.h"
+#include "llviewerjoystick.h" // <SpatiWorld/>
 // <FS:Ansariel> [FS Communication UI]
 // #include "llfloaterimnearbychat.h"
 #include "fsnearbychathub.h"
@@ -89,9 +90,49 @@ struct LLKeyboardActionRegistry
 
 LLViewerInput gViewerInput;
 
+// <SpatiWorld> **Up and down with the camera away from the avatar.** In the flycam, or with the
+// camera on a point after an Alt-click, Page Up and Page Down made the avatar jump or crouch,
+// and moving the avatar takes the camera back to it -- so the one key meant to raise the view
+// threw it away instead. Now they move the camera: the flycam straight up or down, and a
+// focused camera panned up or down with its focus, as the camera controls' pan does.
+F32 get_orbit_rate();
+static bool spatiworld_camera_up_down(EKeystate s, F32 direction)
+{
+    if (LLViewerJoystick::getInstance()->getOverrideCamera())
+    {
+        if (KEYSTATE_UP != s)
+        {
+            LLViewerJoystick::getInstance()->setFlycamRise(direction);
+        }
+        return true;
+    }
+    if (!gAgentCamera.getFocusOnAvatar() && !gAgentCamera.cameraMouselook()
+        && !gAgentCamera.cameraCustomizeAvatar())
+    {
+        if (KEYSTATE_UP != s)
+        {
+            if (direction > 0.f)
+            {
+                gAgentCamera.setPanUpKey(get_orbit_rate());
+            }
+            else
+            {
+                gAgentCamera.setPanDownKey(get_orbit_rate());
+            }
+        }
+        return true;
+    }
+    return false;
+}
+// </SpatiWorld>
+
 bool agent_jump( EKeystate s )
 {
     static bool first_fly_attempt(true);
+    if (spatiworld_camera_up_down(s, 1.f)) // <SpatiWorld/>
+    {
+        return true;
+    }
     if (KEYSTATE_UP == s)
     {
         first_fly_attempt = true;
@@ -129,6 +170,7 @@ bool agent_jump( EKeystate s )
 
 bool agent_push_down( EKeystate s )
 {
+    if (spatiworld_camera_up_down(s, -1.f)) return true; // <SpatiWorld/>
     if( KEYSTATE_UP == s  ) return true;
     // <FS:Ansariel> Chalice Yao's crouch toggle
     //gAgent.moveUp(-1);
