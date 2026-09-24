@@ -80,6 +80,10 @@ public:
     void setCameraNeedsUpdate(bool b)     { mCameraUpdated = b; }
     bool getCameraNeedsUpdate() const     { return mCameraUpdated; }
     bool getOverrideCamera() { return mOverrideCamera; }
+    // <SpatiWorld> Raise (> 0) or lower (< 0) the flycam this frame, 0..1 of its up/down speed:
+    // Page Up and Page Down, which would otherwise make the avatar jump or crouch and take the
+    // camera back to it. See spatiworld_camera_up_down in llviewerinput.cpp.
+    void setFlycamRise(F32 rise) { mFlycamRise = rise; }
     void setOverrideCamera(bool val);
     bool toggleFlycam();
     void setSNDefaults();
@@ -118,6 +122,7 @@ private:
     F32                     mPerfScale;
     bool                    mCameraUpdated;
     bool                    mOverrideCamera;
+    F32                     mFlycamRise = 0.f; // <SpatiWorld/>
     U32                     mJoystickRun;
 
     // Windows: _GUID as U8 binary map
