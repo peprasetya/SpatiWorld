@@ -43,6 +43,9 @@
 #include "llview.h"
 #include "llrootview.h"
 #include "llmenugl.h"
+#include "llfocusmgr.h"
+#include "lltoolbarview.h"
+#include "llviewermenu.h"
 #include "v3math.h"
 
 #include <cmath>
@@ -617,6 +620,7 @@ void SpatiandStereo::beginFrame()
         arranged_view = sFrameView;
         arrangeCanvas();
     }
+    keepHeadersReachable();
     camera->setAxes(sViewAt, sViewLeft, sViewUp);
     // **The world is drawn at the origin.** Its place is the box in the middle of the canvas,
     // and that is where layout, picking and the pointer find it. But the renderer's passes do
@@ -1269,6 +1273,157 @@ void SpatiandStereo::arrangeCanvas()
         }
         gFloaterView->setFollowsAll();
         gFloaterView->setShape(canvas);
+    }
+}
+
+void SpatiandStereo::keepHeadersReachable()
+{
+    if (!isStereo() || !gViewerWindow || !gFloaterView)
+    {
+        return;
+    }
+    LLView* main_view = gViewerWindow->getMainView();
+    if (!main_view)
+    {
+        return;
+    }
+    // What stands in front of the floaters and takes their clicks, in screen coordinates.
+    std::vector<LLRect> chrome;
+    const LLView* stack = main_view->findChildView("menu_stack", false);
+    if (gMenuBarView && gMenuBarView->isInVisibleChain())
+    {
+        // The whole row: the status bar shares it, to the right of the menus.
+        LLRect row = gMenuBarView->calcScreenRect();
+        if (stack)
+        {
+            const LLRect box = stack->calcScreenRect();
+            row.mLeft = box.mLeft;
+            row.mRight = box.mRight;
+        }
+        chrome.push_back(row);
+    }
+    if (const LLView* nav = main_view->findChildView("navigation_bar", false))
+    {
+        if (nav->isInVisibleChain())
+        {
+            chrome.push_back(nav->calcScreenRect());
+        }
+    }
+    if (gToolBarView)
+    {
+        for (int i = LLToolBarEnums::TOOLBAR_FIRST; i <= LLToolBarEnums::TOOLBAR_LAST; ++i)
+        {
+            LLToolBar* bar = gToolBarView->getToolbar((LLToolBarEnums::EToolBarLocation)i);
+            if (bar && bar->hasButtons() && bar->isInVisibleChain())
+            {
+                chrome.push_back(bar->calcScreenRect());
+            }
+        }
+    }
+    if (chrome.empty())
+    {
+        return;
+    }
+    const LLRect canvas = gFloaterView->calcScreenRect();
+
+    for (LLView* view : *gFloaterView->getChildList())
+    {
+        LLFloater* floater = dynamic_cast<LLFloater*>(view);
+        if (!floater || !floater->getVisible() || floater->isMinimized() || floater->getIsChrome()
+            || gFocusMgr.childHasMouseCapture(floater))
+        {
+            continue;
+        }
+        const S32 header_height = floater->getHeaderHeight();
+        if (header_height <= 0)
+        {
+            continue;
+        }
+        const LLRect whole = floater->calcScreenRect();
+        LLRect header = whole;
+        header.mBottom = header.mTop - header_height;
+        // How much of the title bar is still there to take hold of. A bar that covers half its
+        // height or more hides that stretch of it; a toolbar a few buttons wide across one end
+        // leaves the rest, and moving the floater for that would only be moving it for nothing.
+        std::vector<std::pair<S32, S32>> hidden;
+        const LLRect* worst = NULL;
+        S32 worst_width = 0;
+        for (const LLRect& bar : chrome)
+        {
+            const S32 over = llmin(header.mTop, bar.mTop) - llmax(header.mBottom, bar.mBottom);
+            const S32 left = llmax(header.mLeft, bar.mLeft);
+            const S32 right = llmin(header.mRight, bar.mRight);
+            if (over * 2 < header_height || right <= left)
+            {
+                continue;
+            }
+            hidden.emplace_back(left, right);
+            if (right - left > worst_width)
+            {
+                worst_width = right - left;
+                worst = &bar;
+            }
+        }
+        if (!worst)
+        {
+            continue;
+        }
+        std::sort(hidden.begin(), hidden.end());
+        S32 covered = 0, reach = header.mLeft;
+        for (const auto& [left, right] : hidden)
+        {
+            covered += llmax(0, right - llmax(left, reach));
+            reach = llmax(reach, right);
+        }
+        const S32 GRAB = 60;
+        if (header.getWidth() - covered >= llmin(GRAB, header.getWidth()))
+        {
+            continue;
+        }
+        const LLRect& bar = *worst;
+        // Clear of it towards the middle of the view, where it can be seen and reached: under
+        // the menu bar, above the bottom toolbar, in from a side one. If that would take the
+        // floater off the canvas, the shortest way clear that does not.
+        const S32 moves[4][2] = {
+            { 0, bar.mBottom - header.mTop },   // down, under it
+            { 0, bar.mTop - header.mBottom },   // up, over it
+            { bar.mLeft - header.mRight, 0 },   // left of it
+            { bar.mRight - header.mLeft, 0 },   // right of it
+        };
+        auto fits = [&](S32 m)
+        {
+            LLRect moved = whole;
+            moved.translate(moves[m][0], moves[m][1]);
+            return moved.mLeft >= canvas.mLeft && moved.mRight <= canvas.mRight
+                && moved.mBottom >= canvas.mBottom && moved.mTop <= canvas.mTop;
+        };
+        const LLRect middle = stack ? stack->calcScreenRect() : canvas;
+        S32 best = bar.getWidth() >= bar.getHeight()
+                       ? (bar.getCenterY() > middle.getCenterY() ? 0 : 1)
+                       : (bar.getCenterX() < middle.getCenterX() ? 3 : 2);
+        if (!fits(best))
+        {
+            best = -1;
+            S32 best_length = S32_MAX;
+            for (S32 m = 0; m < 4; ++m)
+            {
+                const S32 length = abs(moves[m][0]) + abs(moves[m][1]);
+                if (fits(m) && length < best_length)
+                {
+                    best = m;
+                    best_length = length;
+                }
+            }
+        }
+        if (best >= 0)
+        {
+            LL_INFOS("Spatiand") << "moved " << floater->getName() << " by " << moves[best][0] << ","
+                                 << moves[best][1] << ": its title bar was under the chrome" << LL_ENDL;
+            // As the wearer's own move: the floater remembers it.
+            LLRect rect = floater->getRect();
+            rect.translate(moves[best][0], moves[best][1]);
+            floater->setShape(rect, true);
+        }
     }
 }
 
