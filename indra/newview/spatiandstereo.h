@@ -83,6 +83,9 @@ public:
     // not be taken hold of again. Once a frame, any floater not being dragged whose title bar
     // is under one of them is moved the shortest way clear, and keeps that place.
     static void keepHeadersReachable();
+    // The box the chrome and the menus are kept in, in the main view's UI coordinates: the
+    // view, less the edges one eye or the other cannot see. False when not in stereo.
+    static bool chromeBox(LLRect& box);
 
     static S32 eyeCount() { return isStereo() ? 2 : 1; }
     // Which eye is being drawn: 0 left, 1 right, NO_EYE between passes. Between passes the
@@ -230,6 +233,7 @@ private:
     // The box on the canvas, as it was when this frame began; while the eyes are drawn the
     // world view is moved to the origin, and this is where it really is.
     static LLRect sBoxRaw;
+    static LLRect sChromeBox;
     // Whether the UI covers the pixel under the pointer, read back when the panel is drawn.
     static bool sPointerOnUI;
     static bool sUIDrawn;
