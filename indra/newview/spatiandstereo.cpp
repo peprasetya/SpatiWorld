@@ -76,6 +76,7 @@ bool                  SpatiandStereo::sPointerOnFloaters = false;
 S32                   SpatiandStereo::sEyeWidth = 0;
 S32                   SpatiandStereo::sEyeHeight = 0;
 LLRect                SpatiandStereo::sBoxRaw;
+LLRect                SpatiandStereo::sChromeBox;
 bool                  SpatiandStereo::sPointerOnUI = false;
 bool                  SpatiandStereo::sUIDrawn = false;
 bool                  SpatiandStereo::sFrameKnown = false;
@@ -1216,15 +1217,22 @@ void SpatiandStereo::arrangeCanvas()
     }
 
     // What must never be lost goes in the box: the menu bar, the world's panel with its
-    // toolbars and chat bar, the navigation bar, and anywhere a menu can open.
-    static const char* in_box[] = { "menu_stack", "Menu Holder" };
-    for (const char* name : in_box)
+    // toolbars and chat bar, and the navigation bar.
+    sChromeBox = box;
+    if (LLView* view = main_view->findChildView("menu_stack", false))
     {
-        if (LLView* view = main_view->findChildView(name, false))
-        {
-            view->setFollows(FOLLOWS_NONE);
-            view->setShape(box);
-        }
+        view->setFollows(FOLLOWS_NONE);
+        view->setShape(box);
+    }
+    // The menus too, but by where they may open rather than where their holder is: the holder
+    // spans the canvas at its origin, as it spans the window in a flat viewer, so a menu opened
+    // at a point on the canvas -- a right click in the world -- opens there. Moved into the box,
+    // every such menu came out shifted by the box's offset and was then pushed back inside it,
+    // far from the pointer. LLViewerMenuHolderGL::getMenuRect keeps them in the box.
+    if (LLView* holder = main_view->findChildView("Menu Holder", false))
+    {
+        holder->setFollowsAll();
+        holder->setShape(canvas);
     }
     if (LLView* nav = main_view->findChildView("navigation_bar", false))
     {
@@ -1274,6 +1282,16 @@ void SpatiandStereo::arrangeCanvas()
         gFloaterView->setFollowsAll();
         gFloaterView->setShape(canvas);
     }
+}
+
+bool SpatiandStereo::chromeBox(LLRect& box)
+{
+    if (!isStereo() || sChromeBox.isEmpty())
+    {
+        return false;
+    }
+    box = sChromeBox;
+    return true;
 }
 
 void SpatiandStereo::keepHeadersReachable()

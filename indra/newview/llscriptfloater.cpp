@@ -1170,6 +1170,17 @@ LLScriptFloater* LLScriptFloater::show(const LLUUID& notification_id)
         }
     }
 
+    // <SpatiWorld> The corners above are the world view's, counted from the floater view's
+    // origin as if the two began at the same place. In a flat viewer they do; in stereo the world
+    // view is a box in the middle of a wider canvas, and "top right" came out halfway down its
+    // left edge. Counted from where the world view really is, they are its corners.
+    {
+        const LLRect world = gViewerWindow->getWorldViewRectScaled();
+        const LLRect floaters = gFloaterView->calcScreenRect();
+        pos.translate(world.mLeft - floaters.mLeft, world.mBottom - floaters.mBottom);
+    }
+    // </SpatiWorld>
+
     //LLDialog(LLGiveInventory and LLLoadURL) should no longer steal focus (see EXT-5445)
     LLFloaterReg::showTypedInstance<LLScriptFloater>("script_floater", notification_id, false);
 

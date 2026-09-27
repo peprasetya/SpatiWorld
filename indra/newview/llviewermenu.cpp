@@ -32,6 +32,7 @@
 #endif
 
 #include "llviewermenu.h"
+#include "spatiandstereo.h" // <SpatiWorld/>
 
 // linden library includes
 #include "llavatarnamecache.h"  // IDEVO (I Are Not Men!)
@@ -11494,6 +11495,13 @@ void LLViewerMenuHolderGL::setObjectSelection(LLSafeHandle<LLObjectSelection> se
 
 const LLRect LLViewerMenuHolderGL::getMenuRect() const
 {
+    // <SpatiWorld> In stereo the holder spans the canvas; menus still belong in the view's box.
+    LLRect box;
+    if (SpatiandStereo::chromeBox(box))
+    {
+        return LLRect(box.mLeft, box.mTop - MENU_BAR_HEIGHT, box.mRight, box.mBottom + STATUS_BAR_HEIGHT);
+    }
+    // </SpatiWorld>
     return LLRect(0, getRect().getHeight() - MENU_BAR_HEIGHT, getRect().getWidth(), STATUS_BAR_HEIGHT);
 }
 

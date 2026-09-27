@@ -169,14 +169,18 @@ void PieMenu::show(S32 x, S32 y, LLView* spawning_view)
     LLRect screen = LLMenuGL::sMenuContainer->getMenuRect();
 
     // check if the pie menu is out of bounds and move it accordingly
-    if (x - PIE_OUTER_SIZE < 0)
+    // <SpatiWorld> Against the menu rectangle's own left and right edges, as the bottom and top
+    // already are: it need not start at the holder's left edge (see
+    // LLViewerMenuHolderGL::getMenuRect), and where it does not, this pushed the pie off to one side.
+    if (x - PIE_OUTER_SIZE < screen.mLeft)
     {
-        x = PIE_OUTER_SIZE;
+        x = PIE_OUTER_SIZE + screen.mLeft;
     }
-    else if (x + PIE_OUTER_SIZE > screen.getWidth())
+    else if (x + PIE_OUTER_SIZE > screen.mRight)
     {
-        x = screen.getWidth() - PIE_OUTER_SIZE;
+        x = screen.mRight - PIE_OUTER_SIZE;
     }
+    // </SpatiWorld>
 
     if (y - PIE_OUTER_SIZE < screen.mBottom)
     {
