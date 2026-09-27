@@ -77,6 +77,12 @@ public:
     // HUD attachments are laid out for the box; drawn on the whole canvas they keep their
     // size and place, and may be moved out past its edges.
     static void fitHudToCanvas();
+    // **A floater's title bar stays where it can be grabbed.** The menu bar, navigation bar and
+    // toolbars stand in front of the floaters, so a floater dragged up under the menu bar had
+    // its title bar covered by it: every click there went to the menus, and the window could
+    // not be taken hold of again. Once a frame, any floater not being dragged whose title bar
+    // is under one of them is moved the shortest way clear, and keeps that place.
+    static void keepHeadersReachable();
 
     static S32 eyeCount() { return isStereo() ? 2 : 1; }
     // Which eye is being drawn: 0 left, 1 right, NO_EYE between passes. Between passes the
