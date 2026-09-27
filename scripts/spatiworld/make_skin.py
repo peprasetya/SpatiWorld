@@ -251,4 +251,12 @@ assert "SpatiFloaterTint" in floater
 <!-- SpatiWorld: the top-level menu names, the same size as the items under them. -->
 <menu_item font="SansSerif" />
 """)
+# ---------------------------------------------------------------- hand-written panels
+# Kept beside this script and copied over the generated skin: the login panel in the Second Life
+# viewer's arrangement, and anything else laid out by hand rather than derived from Firestorm.
+HAND = pathlib.Path(__file__).resolve().parent / "xui"
+for f in HAND.rglob("*.xml"):
+    dest = OUT / "xui" / f.relative_to(HAND)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(f, dest)
 print("skin written to", OUT)
