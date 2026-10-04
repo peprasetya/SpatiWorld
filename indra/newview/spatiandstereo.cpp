@@ -96,6 +96,8 @@ U32                   SpatiandStereo::sRenderWidth = 0;
 U32                   SpatiandStereo::sRenderHeight = 0;
 U32                   SpatiandStereo::sAskedWidth = 0;
 U32                   SpatiandStereo::sAskedHeight = 0;
+bool                  SpatiandStereo::sWantsRoom = false;
+bool                  SpatiandStereo::sGlasses = true;
 size_t                SpatiandStereo::sPosesSize = 0;
 
 namespace
@@ -211,6 +213,20 @@ void SpatiandStereo::detect()
         }
     }
 
+    // **The glasses' answer is stronger than SPATIAND_EYES.** A session without glasses (a Mac
+    // window) says so at launch; the viewer then starts flat, with no flash of the room, and
+    // can still become the room when `set_glasses 1` arrives.
+    sWantsRoom = (sEyes == EYES_SIDE_BY_SIDE);
+    sGlasses = true;
+    if (const char* glasses = said("SPATIAND_GLASSES"))
+    {
+        sGlasses = strcmp(glasses, "0") != 0;
+    }
+    if (sWantsRoom && !sGlasses)
+    {
+        sEyes = EYES_MONO;
+    }
+
     // The wearer's own separation, once the host knows how to measure it. Until then every
     // head is the population average, which is wrong for everybody by a millimetre or two and
     // is still better than guessing per viewer.
@@ -252,7 +268,39 @@ void SpatiandStereo::detect()
         return;
     }
 
-    if (!isStereo() || !gViewerWindow || !gViewerWindow->getWindow())
+    if (sWantsRoom && !sGlasses)
+    {
+        LL_INFOS("Spatiand") << "the session has no glasses on; starting as a window" << LL_ENDL;
+        becomeWindow();
+        return;
+    }
+
+    becomeRoom(true);
+}
+
+void SpatiandStereo::setRoom(bool room)
+{
+    if (!sRemote || !sWantsRoom || room == sGlasses)
+    {
+        return;
+    }
+    sGlasses = room;
+    LL_INFOS("Spatiand") << (room ? "glasses are on: becoming the room" : "no glasses: becoming a window")
+                         << LL_ENDL;
+    if (room)
+    {
+        becomeRoom(false);
+    }
+    else
+    {
+        becomeWindow();
+    }
+}
+
+void SpatiandStereo::becomeRoom(bool at_start)
+{
+    sEyes = EYES_SIDE_BY_SIDE;
+    if (!gViewerWindow || !gViewerWindow->getWindow())
     {
         return;
     }
@@ -264,7 +312,14 @@ void SpatiandStereo::detect()
     // the compositor hands back.
     // The size spatiand said, if it has; otherwise twice the window as it is, which is at least
     // two eyes of the size this viewer was already drawing.
-    listen();
+    // (Not when switching: this is called from listen, which is already reading.)
+    if (at_start)
+    {
+        listen();
+    }
+    // Asked afresh: the window was one eye wide and has to become two.
+    sAskedWidth = 0;
+    sAskedHeight = 0;
     askForSize();
     // Menu rows a pointer can land on from a metre away. Read before the layout below, which
     // is also what brings in the stereo UI scale (LLViewerWindow::calcDisplayScale).
@@ -301,6 +356,94 @@ void SpatiandStereo::detect()
     tell("set_eye_layout side_by_side");
     tell("set_layer projection");
     tell("set_cursor_drawn 1");
+}
+
+// Put back what arrangeCanvas moved, as main_view.xml has it: the menus and the world's panel
+// fill the window, the navigation bar hangs under the menu bar, the progress bar sits at the
+// bottom, and the floaters live in the world's panel again.
+void SpatiandStereo::restoreWindowLayout()
+{
+    LLView* main_view = gViewerWindow ? gViewerWindow->getMainView() : NULL;
+    if (!main_view)
+    {
+        return;
+    }
+    const LLRect canvas = main_view->getLocalRect();
+    if (LLView* stack = main_view->findChildView("menu_stack", false))
+    {
+        stack->setFollowsAll();
+        stack->setShape(canvas);
+    }
+    if (LLView* nav = main_view->findChildView("navigation_bar", false))
+    {
+        LLRect rect = nav->getRect();
+        rect.setLeftTopAndSize(0, canvas.getHeight() - 19, canvas.getWidth(), rect.getHeight());
+        nav->setFollows(FOLLOWS_LEFT | FOLLOWS_TOP | FOLLOWS_RIGHT);
+        nav->setShape(rect);
+    }
+    if (LLView* mini = main_view->findChildView("progress_view_mini", false))
+    {
+        LLRect rect = mini->getRect();
+        rect.setLeftTopAndSize((canvas.getWidth() - rect.getWidth()) / 2, 78, rect.getWidth(),
+                               rect.getHeight());
+        mini->setFollows(FOLLOWS_BOTTOM | FOLLOWS_LEFT | FOLLOWS_RIGHT);
+        mini->setShape(rect);
+    }
+    if (gFloaterView && gFloaterView->getParent() == main_view)
+    {
+        if (LLView* world = main_view->findChildView("world_panel", true))
+        {
+            main_view->removeChild(gFloaterView);
+            world->addChild(gFloaterView);
+            gFloaterView->setFollowsAll();
+            gFloaterView->setShape(world->getLocalRect());
+            // The toolbars stand in front of the floaters in the window, as the layout has it.
+            if (LLView* toolbars = world->findChildView("toolbar_view_holder", false))
+            {
+                world->sendChildToFront(toolbars);
+            }
+        }
+    }
+}
+
+void SpatiandStereo::becomeWindow()
+{
+    sEyes = EYES_MONO;
+    sCurrentEye = NO_EYE;
+    // The normal pointer, drawn by the viewer; the head no longer turns the camera and the UI is
+    // the ordinary one (everything else here is guarded by isStereo()).
+    LLWindow::sCursorMap = nullptr;
+    LLWindow::sLayoutHeight = 0;
+    sChromeBox = LLRect();
+    tell("set_eye_layout mono");
+    tell("set_layer window");
+    tell("set_cursor_drawn 0");
+
+    if (!gViewerWindow || !gViewerWindow->getWindow())
+    {
+        return;
+    }
+    // Back to the viewer's own field of view, the person's setting and not the glasses'.
+    LLViewerCamera::getInstance()->setDefaultFOV(gSavedSettings.getF32("CameraAngle"));
+
+    restoreWindowLayout();
+
+    // One eye wide again. A window left at two eyes' width would be stretched, so ask for half
+    // of it once, when it had been made the room's size; after that the window is whatever the
+    // person makes it (the host resizes it). The size is laid out at once either way, so the
+    // viewer does not go on believing the window is the size it had.
+    LLCoordWindow size;
+    if (sAskedWidth && gViewerWindow->getWindow()->getSize(&size))
+    {
+        size.mX = llmax(size.mX / 2, 320);
+        gViewerWindow->getWindow()->setSize(size);
+    }
+    sAskedWidth = 0;
+    sAskedHeight = 0;
+    if (gViewerWindow->getWindow()->getSize(&size))
+    {
+        gViewerWindow->handleResize(gViewerWindow->getWindow(), size.mX, size.mY);
+    }
 }
 
 void SpatiandStereo::tell(const char* message)
@@ -541,6 +684,10 @@ void SpatiandStereo::listen()
                 sRenderHeight = height;
                 LL_INFOS("Spatiand") << "spatiand wants the picture at " << width << "x" << height << LL_ENDL;
             }
+        }
+        else if (!strncmp(buffer, "set_glasses ", 12))
+        {
+            setRoom(buffer[12] != '0');
         }
         else
         {
