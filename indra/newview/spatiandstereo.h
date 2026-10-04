@@ -261,6 +261,8 @@ private:
     static void askForSize();
     // The room or an ordinary window. See setRoom.
     static bool sWantsRoom;   // launched as a side-by-side viewer, so it can be the room
+    static bool sGlassesSaid; // the host has said, before detect ran
+    static bool sDetected;
     static bool sGlasses;     // the session has glasses on (assumed until told otherwise)
     static void becomeRoom(bool at_start);
     static void becomeWindow();
