@@ -98,6 +98,8 @@ U32                   SpatiandStereo::sAskedWidth = 0;
 U32                   SpatiandStereo::sAskedHeight = 0;
 bool                  SpatiandStereo::sWantsRoom = false;
 bool                  SpatiandStereo::sGlasses = true;
+bool                  SpatiandStereo::sGlassesSaid = false;
+bool                  SpatiandStereo::sDetected = false;
 size_t                SpatiandStereo::sPosesSize = 0;
 
 namespace
@@ -217,10 +219,17 @@ void SpatiandStereo::detect()
     // window) says so at launch; the viewer then starts flat, with no flash of the room, and
     // can still become the room when `set_glasses 1` arrives.
     sWantsRoom = (sEyes == EYES_SIDE_BY_SIDE);
-    sGlasses = true;
-    if (const char* glasses = said("SPATIAND_GLASSES"))
+    // Unless the host has already said, on the control socket: this runs at login, ten seconds
+    // or so after launch, and a session that learnt it had no glasses in the meantime (a Mac
+    // that connects after the launch) must not have that forgotten.
+    sDetected = true;
+    if (!sGlassesSaid)
     {
-        sGlasses = strcmp(glasses, "0") != 0;
+        sGlasses = true;
+        if (const char* glasses = said("SPATIAND_GLASSES"))
+        {
+            sGlasses = strcmp(glasses, "0") != 0;
+        }
     }
     if (sWantsRoom && !sGlasses)
     {
@@ -280,6 +289,13 @@ void SpatiandStereo::detect()
 
 void SpatiandStereo::setRoom(bool room)
 {
+    if (!sDetected)
+    {
+        // Before login: nothing to switch yet, but it is not lost -- see detect.
+        sGlasses = room;
+        sGlassesSaid = true;
+        return;
+    }
     if (!sRemote || !sWantsRoom || room == sGlasses)
     {
         return;
