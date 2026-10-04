@@ -111,6 +111,11 @@ public:
     // happened to be. Called once a frame, before and after login alike; one non-blocking read.
     static void listen();
 
+    // **The room with glasses on, an ordinary window without.** One function for start-up and
+    // for `set_glasses`, so the two cannot disagree. A viewer that was not launched as a
+    // side-by-side one has nothing to switch to and ignores it.
+    static void setRoom(bool room);
+
     // How far this eye sits from the middle of the head, in metres: negative is left of it.
     static F32 currentEyeShift();
     static F32 eyeSeparation() { return sEyeSeparation; }
@@ -254,6 +259,12 @@ private:
     static U32 sAskedWidth;
     static U32 sAskedHeight;
     static void askForSize();
+    // The room or an ordinary window. See setRoom.
+    static bool sWantsRoom;   // launched as a side-by-side viewer, so it can be the room
+    static bool sGlasses;     // the session has glasses on (assumed until told otherwise)
+    static void becomeRoom(bool at_start);
+    static void becomeWindow();
+    static void restoreWindowLayout();
     // Say something to spatiand-host down the control socket, in spatiand_xr_v1's words.
     static void tell(const char* message);
     static const U8* sPoses;
