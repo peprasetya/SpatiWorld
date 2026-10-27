@@ -46,6 +46,7 @@
 #include "llfocusmgr.h"
 #include "lltoolbarview.h"
 #include "llviewermenu.h"
+#include "llimagepng.h"
 #include "v3math.h"
 
 #include <cmath>
@@ -76,6 +77,8 @@ bool                  SpatiandStereo::sPointerOnFloaters = false;
 S32                   SpatiandStereo::sEyeWidth = 0;
 S32                   SpatiandStereo::sEyeHeight = 0;
 LLRect                SpatiandStereo::sBoxRaw;
+bool                  SpatiandStereo::sHudCovered = false;
+std::string           SpatiandStereo::sDumpDir;
 LLRect                SpatiandStereo::sChromeBox;
 bool                  SpatiandStereo::sPointerOnUI = false;
 bool                  SpatiandStereo::sUIDrawn = false;
@@ -1042,6 +1045,7 @@ bool SpatiandStereo::beginUI(ELayer layer)
     }
     if (layer == LAYER_FLOATERS)
     {
+        sHudCovered = false;
         // Which floater is active is settled here, once, for the whole frame: the two floater
         // layers and the cursor all have to agree on it.
         LLFloater* active = findActiveFloater();
@@ -1081,7 +1085,14 @@ bool SpatiandStereo::beginUI(ELayer layer)
     LLRender::sLayerAlpha = true;
     gGL.setSceneBlendType(LLRender::BT_ALPHA);
     glClearColor(0.f, 0.f, 0.f, 0.f);
-    target->clear();
+    {
+        // Depth as well, for the HUD's objects: glClear leaves depth alone while depth writes
+        // are off, and the UI keeps them off. Left uncleared, the HUD failed its depth test
+        // against whatever was there and was never seen.
+        LLGLDepthTest depth(GL_TRUE, GL_TRUE);
+        LLGLDisable no_scissor(GL_SCISSOR_TEST);
+        target->clear();
+    }
     if (layer == LAYER_CHROME)
     {
         // Everything but the floaters, which are the other layer.
@@ -1109,6 +1120,24 @@ void SpatiandStereo::endUI(ELayer layer)
             U8 pixel[4] = { 0, 0, 0, 0 };
             glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel);
             covered = pixel[3] > 24;
+        }
+    }
+    if (!sDumpDir.empty())
+    {
+        const S32 w = target->getWidth();
+        const S32 h = target->getHeight();
+        LLPointer<LLImageRaw> raw = new LLImageRaw(w, h, 4);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, raw->getData());
+        LLPointer<LLImagePNG> png = new LLImagePNG;
+        const char* name = layer == LAYER_FLOATERS ? "floaters" : layer == LAYER_ACTIVE ? "active" : "chrome";
+        if (png->encode(raw, 0.f))
+        {
+            png->save(sDumpDir + "/" + name + ".png");
+        }
+        if (layer == LAYER_CHROME)
+        {
+            sDumpDir.clear(); // the last layer of the frame
         }
     }
     LLRender::sLayerAlpha = false;
@@ -1635,6 +1664,62 @@ void SpatiandStereo::fitHudToCanvas()
     set_current_projection(proj);
     gGL.matrixMode(LLRender::MM_MODELVIEW);
     glViewport(0, 0, (GLsizei)canvas_w, (GLsizei)canvas_h);
+}
+
+bool SpatiandStereo::hudBox(LLRect& box)
+{
+    if (!isStereo() || !gViewerWindow || sBoxRaw.isEmpty())
+    {
+        return false;
+    }
+    box = LLViewerWindow::calcScaledRect(sBoxRaw, gViewerWindow->getDisplayScale());
+    return true;
+}
+
+void SpatiandStereo::coverHud()
+{
+    if (!isStereo() || !LLRender::sLayerAlpha || sHudCovered)
+    {
+        return;
+    }
+    sHudCovered = true;
+    gGL.flush();
+    gGL.matrixMode(LLRender::MM_PROJECTION);
+    gGL.pushMatrix();
+    gGL.loadIdentity();
+    gGL.matrixMode(LLRender::MM_MODELVIEW);
+    gGL.pushMatrix();
+    gGL.loadIdentity();
+    {
+        // A quad over the whole target at the far plane, passing only where something nearer
+        // was drawn, writing nothing but alpha.
+        LLGLDepthTest depth(GL_TRUE, GL_FALSE, GL_GREATER);
+        LLGLDisable no_blend(GL_BLEND);
+        LLGLDisable no_cull(GL_CULL_FACE);
+        gGL.setColorMask(false, true);
+        gUIProgram.bind();
+        gGL.getTexUnit(0)->bind(LLViewerFetchedTexture::sWhiteImagep);
+        gGL.color4f(1.f, 1.f, 1.f, 1.f);
+        gGL.begin(LLRender::TRIANGLE_STRIP);
+        gGL.vertex3f(-1.f, -1.f, 1.f);
+        gGL.vertex3f(1.f, -1.f, 1.f);
+        gGL.vertex3f(-1.f, 1.f, 1.f);
+        gGL.vertex3f(1.f, 1.f, 1.f);
+        gGL.end();
+        gGL.flush();
+        gGL.getTexUnit(0)->unbind(LLTexUnit::TT_TEXTURE);
+        gUIProgram.unbind();
+        gGL.setColorMask(true, false);
+    }
+    gGL.matrixMode(LLRender::MM_PROJECTION);
+    gGL.popMatrix();
+    gGL.matrixMode(LLRender::MM_MODELVIEW);
+    gGL.popMatrix();
+}
+
+void SpatiandStereo::dumpLayers(const std::string& dir)
+{
+    sDumpDir = dir;
 }
 
 void SpatiandStereo::drawCursor()

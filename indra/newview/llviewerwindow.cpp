@@ -5715,6 +5715,19 @@ LLVector3 LLViewerWindow::mouseDirectionGlobal(const S32 x, const S32 y) const
 
 LLVector3 LLViewerWindow::mousePointHUD(const S32 x, const S32 y) const
 {
+    // <SpatiWorld> In stereo the HUD is drawn into the view's box on the canvas; see
+    // SpatiandStereo::fitHudToCanvas.
+    {
+        LLRect box;
+        if (SpatiandStereo::hudBox(box) && box.getHeight() > 0 && box.getWidth() > 0)
+        {
+            const F32 aspect = LLViewerCamera::getInstance()->getAspect();
+            const F32 hud_x = -((F32)x - (F32)box.getCenterX()) * aspect / box.getWidth();
+            const F32 hud_y = ((F32)y - (F32)box.getCenterY()) / box.getHeight();
+            return LLVector3(0.f, hud_x / gAgentCamera.mHUDCurZoom, hud_y / gAgentCamera.mHUDCurZoom);
+        }
+    }
+    // </SpatiWorld>
     // find screen resolution
     S32         height = getWorldViewHeightScaled();
 
@@ -7272,12 +7285,13 @@ F32 LLViewerWindow::getWorldViewAspectRatio() const
 void LLViewerWindow::calcDisplayScale()
 {
     F32 ui_scale_factor = llclamp(gSavedSettings.getF32("UIScaleFactor") * mWindow->getSystemUISize(), MIN_UI_SCALE, MAX_UI_SCALE);
-    // <SpatiWorld> In a headset a pixel is a far smaller angle than on a desk, and the UI is
-    // pointed at rather than clicked: it has its own, bigger, scale there.
+    // <SpatiWorld> In the glasses the view's box is one eye, the size of the window, and the UI is
+    // laid out in it at the window's own scale: the same menus and text, with the same room.
+    // SpatiWorldUIScale makes it bigger (or smaller) there only.
     if (SpatiandStereo::isStereo())
     {
-        static LLCachedControl<F32> stereo_scale(gSavedSettings, "SpatiWorldUIScale", 1.4f);
-        ui_scale_factor = llclamp((F32)stereo_scale, MIN_UI_SCALE, MAX_UI_SCALE);
+        static LLCachedControl<F32> stereo_scale(gSavedSettings, "SpatiWorldUIScale", 1.f);
+        ui_scale_factor = llclamp(ui_scale_factor * (F32)stereo_scale, MIN_UI_SCALE, MAX_UI_SCALE);
     }
     // </SpatiWorld>
     LLVector2 display_scale;

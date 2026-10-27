@@ -28,6 +28,8 @@
 
 #include "llspatialpartition.h"
 
+bool LLSpatialPartition::sPickAnyPass = false; // <SpatiWorld/>
+
 #include "llappviewer.h"
 #include "lltexturecache.h"
 #include "lltexturefetch.h"
@@ -3958,7 +3960,8 @@ public:
     {
         LLDrawable* drawable = (LLDrawable*)entry->getDrawable();
 
-        if (!drawable || !gPipeline.hasRenderType(drawable->getRenderType()) || !drawable->isVisible())
+        if (!drawable || !gPipeline.hasRenderType(drawable->getRenderType())
+            || (!drawable->isVisible() && !LLSpatialPartition::sPickAnyPass)) // <SpatiWorld/>
         {
             return false;
         }

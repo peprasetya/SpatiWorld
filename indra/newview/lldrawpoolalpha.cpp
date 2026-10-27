@@ -27,6 +27,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "lldrawpoolalpha.h"
+#include "spatiandstereo.h" // <SpatiWorld/>
 
 #include "llglheaders.h"
 #include "llviewercontrol.h"
@@ -231,6 +232,12 @@ void LLDrawPoolAlpha::renderPostDeferred(S32 pass)
 
 void LLDrawPoolAlpha::forwardRender(bool rigged)
 {
+    // <SpatiWorld> A HUD in the stereo UI layer: see SpatiandStereo::coverHud.
+    if (LLPipeline::sRenderingHUDs)
+    {
+        SpatiandStereo::coverHud();
+    }
+    // </SpatiWorld>
     gPipeline.enableLightsDynamic();
 
     LLGLSPipelineAlpha gls_pipeline_alpha;

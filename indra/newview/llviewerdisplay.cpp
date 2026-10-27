@@ -1719,7 +1719,15 @@ void render_ui(F32 zoom_factor, int subfield)
         {
             if (SpatiandStereo::beginUI(SpatiandStereo::LAYER_FLOATERS))
             {
-                render_hud_attachments();
+                {
+                    // With depth tested and written, as a HUD drawn over the world has it: the
+                    // UI's state here has depth off, and without it the HUD's solid prims
+                    // neither sorted nor covered the layer, and were never seen.
+                    LLGLDepthTest hud_depth(GL_TRUE, GL_TRUE, GL_LEQUAL);
+                    render_hud_attachments();
+                    // Its solid faces cover the layer, if no alpha pass has already seen to it.
+                    SpatiandStereo::coverHud();
+                }
                 // The HUD's passes leave alpha writes off; the layer is its alpha.
                 gGL.setColorMask(true, true);
                 if (render_ui)
