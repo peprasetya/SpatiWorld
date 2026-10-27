@@ -80,6 +80,21 @@ public:
     // That box in the main view's UI coordinates, for finding what HUD prim the pointer is on
     // (LLViewerWindow::mousePointHUD). False when not in stereo.
     static bool hudBox(LLRect& box);
+    // **A selected HUD prim's outline and edit handles are drawn on it.** Firestorm draws them
+    // with a projection of their own, made for a HUD that fills the view; called right after
+    // that projection is reset, this puts the HUD's fit in front of it. Only while the UI panel
+    // is drawn, which in stereo is where a HUD's selection is drawn, with the HUD.
+    static void fitHudProjection();
+    // Whether one of the UI panel's layers is being drawn.
+    static bool drawingPanel();
+    // **Edit handles are grabbed where they are drawn.** The edit tools take the pointer as if
+    // the view began at the window's corner, as in 2D it does; in stereo the view is the box in
+    // the middle of the canvas. Moves x and y (main view UI coordinates) into the box's own.
+    // False, and nothing moved, outside stereo.
+    static bool toViewBox(S32& x, S32& y);
+    // The visibility frame the HUD was last drawn in, for picking it (see
+    // LLSpatialPartition::sPickVisibleFrame); 0 when it was not drawn. Always 0 outside stereo.
+    static U32 hudVisibleFrame();
     // **The HUD covers the layer it is drawn in.** The UI layer is laid over the world by its
     // alpha, and the HUD's passes keep alpha writes off (and an alpha object's blend only ever
     // lowers alpha), so a HUD drawn there left no coverage and vanished. Wherever the HUD's
@@ -254,6 +269,7 @@ private:
     static LLRect sBoxRaw;
     static LLRect sChromeBox;
     static bool sHudCovered;
+    static U32 sHudFrame;
     static std::string sDumpDir;
     // Whether the UI covers the pixel under the pointer, read back when the panel is drawn.
     static bool sPointerOnUI;

@@ -1714,7 +1714,8 @@ void render_ui(F32 zoom_factor, int subfield)
         // </FS:Beq>
 
         // <SpatiWorld> The UI and HUD laid out once, in front of the aim, and put into each eye
-        // where it stands. Name tags and selection stay in the world, drawn per eye above.
+        // where it stands. Name tags, and what is selected in the world, stay in the world, drawn
+        // per eye above; a selected HUD prim's outline and handles go with the HUD.
         if (ui_panel)
         {
             if (SpatiandStereo::beginUI(SpatiandStereo::LAYER_FLOATERS))
@@ -1730,6 +1731,24 @@ void render_ui(F32 zoom_factor, int subfield)
                 }
                 // The HUD's passes leave alpha writes off; the layer is its alpha.
                 gGL.setColorMask(true, true);
+                // A selected HUD prim's outline and edit handles, as render_ui_3d draws them after
+                // the HUD in 2D, fitted onto it the same way (SpatiandStereo::fitHudProjection).
+                // Over it: their projection's depth is not the HUD's, and the HUD's depth has
+                // done its work (coverHud).
+                if (render_ui && !gDisconnected)
+                {
+                    gGL.flush();
+                    {
+                        LLGLDepthTest depth(GL_TRUE, GL_TRUE);
+                        LLGLDisable no_scissor(GL_SCISSOR_TEST);
+                        glClear(GL_DEPTH_BUFFER_BIT);
+                    }
+                    LLGLSPipeline gls_pipeline;
+                    gUIProgram.bind();
+                    gGL.color4f(1.f, 1.f, 1.f, 1.f);
+                    gViewerWindow->renderSelections(false, false, true);
+                    gGL.flush();
+                }
                 if (render_ui)
                 {
                     SpatiandStereo::drawFloaters(SpatiandStereo::LAYER_FLOATERS);
@@ -1939,7 +1958,12 @@ void render_ui_3d()
     }
     // </FS:PP>
 
-    gViewerWindow->renderSelections(false, false, true); // Non HUD call in render_hud_elements
+    // <SpatiWorld> In stereo a HUD's selection is drawn with the HUD, on the UI panel.
+    if (!SpatiandStereo::isStereo())
+    {
+        gViewerWindow->renderSelections(false, false, true); // Non HUD call in render_hud_elements
+    }
+    // </SpatiWorld>
 
     if (gPipeline.hasRenderDebugFeatureMask(LLPipeline::RENDER_DEBUG_FEATURE_UI))
     {

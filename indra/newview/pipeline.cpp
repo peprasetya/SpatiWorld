@@ -7407,10 +7407,12 @@ LLViewerObject* LLPipeline::lineSegmentIntersectInHUD(const LLVector4a& start, c
         LLSpatialPartition* part = region->getSpatialPartition(LLViewerRegion::PARTITION_HUD);
         if (part)
         {
-            // <SpatiWorld> See LLSpatialPartition::sPickAnyPass.
-            LLSpatialPartition::sPickAnyPass = SpatiandStereo::isStereo();
-            LLDrawable* hit = part->lineSegmentIntersect(start, end, pick_transparent, false, true, false, face_hit, intersection, tex_coord, normal, tangent);
-            LLSpatialPartition::sPickAnyPass = false;
+            // <SpatiWorld> See LLSpatialPartition::sPickVisibleFrame. In stereo a HUD that was
+            // not drawn (hidden) is not hit, as in 2D.
+            LLSpatialPartition::sPickVisibleFrame = SpatiandStereo::hudVisibleFrame();
+            LLDrawable* hit = (SpatiandStereo::isStereo() && !LLSpatialPartition::sPickVisibleFrame) ? nullptr
+                : part->lineSegmentIntersect(start, end, pick_transparent, false, true, false, face_hit, intersection, tex_coord, normal, tangent);
+            LLSpatialPartition::sPickVisibleFrame = 0;
             // </SpatiWorld>
             if (hit)
             {

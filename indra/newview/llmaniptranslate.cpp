@@ -31,6 +31,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llmaniptranslate.h"
+#include "spatiandstereo.h" // <SpatiWorld/>
 
 #include "llgl.h"
 #include "llrender.h"
@@ -442,14 +443,19 @@ bool LLManipTranslate::handleHover(S32 x, S32 y, MASK mask)
     bool rotated = false;
 
     // ...build mode moves camera about focus point
+    // <SpatiWorld> From the view's own left edge; see SpatiandStereo::toViewBox.
+    S32 view_x = x;
+    S32 view_y = y;
+    SpatiandStereo::toViewBox(view_x, view_y);
+    // </SpatiWorld>
     if (mObjectSelection->getSelectType() != SELECT_TYPE_HUD)
     {
-        if (x < ROTATE_H_MARGIN)
+        if (view_x < ROTATE_H_MARGIN)
         {
             gAgentCamera.cameraOrbitAround(rotate_angle);
             rotated = true;
         }
-        else if (x > world_rect.getWidth() - ROTATE_H_MARGIN)
+        else if (view_x > world_rect.getWidth() - ROTATE_H_MARGIN)
         {
             gAgentCamera.cameraOrbitAround(-rotate_angle);
             rotated = true;
@@ -996,7 +1002,12 @@ void LLManipTranslate::highlightManipulators(S32 x, S32 y)
     LLRect world_view_rect = gViewerWindow->getWorldViewRectScaled();
     F32 half_width = (F32)world_view_rect.getWidth() / 2.f;
     F32 half_height = (F32)world_view_rect.getHeight() / 2.f;
-    LLVector2 mousePos((F32)x - half_width, (F32)y - half_height);
+    // <SpatiWorld> From the view's corner, as the handles are; see SpatiandStereo::toViewBox.
+    S32 view_x = x;
+    S32 view_y = y;
+    SpatiandStereo::toViewBox(view_x, view_y);
+    LLVector2 mousePos((F32)view_x - half_width, (F32)view_y - half_height);
+    // </SpatiWorld>
     LLVector2 mouse_delta;
 
     // Keep order consistent with insertion via stable_sort

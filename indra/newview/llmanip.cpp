@@ -27,6 +27,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llmanip.h"
+#include "spatiandstereo.h" // <SpatiWorld/>
 
 #include "llmath.h"
 #include "v3math.h"
@@ -270,6 +271,7 @@ bool LLManip::getMousePointOnPlaneGlobal(LLVector3d& point, S32 x, S32 y, LLVect
     if (mObjectSelection->getSelectType() == SELECT_TYPE_HUD)
     {
         bool result = false;
+        SpatiandStereo::toViewBox(x, y); // <SpatiWorld/>
         F32 mouse_x = ((F32)x / gViewerWindow->getWorldViewWidthScaled() - 0.5f) * LLViewerCamera::getInstance()->getAspect() / gAgentCamera.mHUDCurZoom;
         F32 mouse_y = ((F32)y / gViewerWindow->getWorldViewHeightScaled() - 0.5f) / gAgentCamera.mHUDCurZoom;
 
@@ -309,8 +311,13 @@ bool LLManip::nearestPointOnLineFromMouse( S32 x, S32 y, const LLVector3& b1, co
 
     if (mObjectSelection->getSelectType() == SELECT_TYPE_HUD)
     {
-        F32 mouse_x = (((F32)x / gViewerWindow->getWindowWidthScaled()) - 0.5f) * LLViewerCamera::getInstance()->getAspect() / gAgentCamera.mHUDCurZoom;
-        F32 mouse_y = (((F32)y / gViewerWindow->getWindowHeightScaled()) - 0.5f) / gAgentCamera.mHUDCurZoom;
+        // <SpatiWorld> In stereo the HUD fills the view's box, not the window.
+        const bool in_box = SpatiandStereo::toViewBox(x, y);
+        const F32 width = (F32)(in_box ? gViewerWindow->getWorldViewWidthScaled() : gViewerWindow->getWindowWidthScaled());
+        const F32 height = (F32)(in_box ? gViewerWindow->getWorldViewHeightScaled() : gViewerWindow->getWindowHeightScaled());
+        F32 mouse_x = (((F32)x / width) - 0.5f) * LLViewerCamera::getInstance()->getAspect() / gAgentCamera.mHUDCurZoom;
+        F32 mouse_y = (((F32)y / height) - 0.5f) / gAgentCamera.mHUDCurZoom;
+        // </SpatiWorld>
         a1 = LLVector3(llmin(b1.mV[VX] - 0.1f, b2.mV[VX] - 0.1f, 0.f), -mouse_x, mouse_y);
         a2 = a1 + LLVector3(1.f, 0.f, 0.f);
     }
@@ -512,6 +519,14 @@ void LLManip::renderXYZ(const LLVector3 &vec)
     S32 window_center_x = gViewerWindow->getWorldViewRectScaled().getWidth() / 2;
     S32 window_center_y = gViewerWindow->getWorldViewRectScaled().getHeight() / 2;
     S32 vertical_offset = window_center_y - VERTICAL_OFFSET;
+    // <SpatiWorld> On the UI panel (a HUD's selection, in stereo) the view is the box on the canvas.
+    LLRect box;
+    if (SpatiandStereo::drawingPanel() && SpatiandStereo::hudBox(box))
+    {
+        window_center_x += box.mLeft;
+        window_center_y += box.mBottom;
+    }
+    // </SpatiWorld>
 
 
     gGL.pushMatrix();

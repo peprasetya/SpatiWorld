@@ -27,6 +27,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llmanipscale.h"
+#include "spatiandstereo.h" // <SpatiWorld/>
 
 // library includes
 #include "llmath.h"
@@ -538,7 +539,12 @@ void LLManipScale::highlightManipulators(S32 x, S32 y)
         F32 half_width = (F32)world_view_rect.getWidth() / 2.f;
         F32 half_height = (F32)world_view_rect.getHeight() / 2.f;
         LLVector2 manip2d;
-        LLVector2 mousePos((F32)x - half_width, (F32)y - half_height);
+        // <SpatiWorld> From the view's corner, as the handles are; see SpatiandStereo::toViewBox.
+        S32 view_x = x;
+        S32 view_y = y;
+        SpatiandStereo::toViewBox(view_x, view_y);
+        LLVector2 mousePos((F32)view_x - half_width, (F32)view_y - half_height);
+        // </SpatiWorld>
         LLVector2 delta;
 
         mHighlightedPart = LL_NO_PART;

@@ -28,7 +28,7 @@
 
 #include "llspatialpartition.h"
 
-bool LLSpatialPartition::sPickAnyPass = false; // <SpatiWorld/>
+U32 LLSpatialPartition::sPickVisibleFrame = 0; // <SpatiWorld/>
 
 #include "llappviewer.h"
 #include "lltexturecache.h"
@@ -3816,6 +3816,20 @@ typedef LLPointer< ndDrawableOctreeListener > ndDrawableOctreeListenerPtr;
 
 // </FS:ND>
 
+// <SpatiWorld> LLDrawable::isVisible, for a visibility frame that need not be the current one:
+// seen in it itself, or in a group seen in it. A HUD prim inside an attachment is never marked
+// itself; its group is.
+static bool seenInFrame(LLDrawable* drawable, U32 frame)
+{
+    if (drawable->getVisible() == frame)
+    {
+        return true;
+    }
+    LLViewerOctreeGroup* group = drawable->getGroup();
+    return group && (U32)group->getVisible(LLViewerCamera::sCurCameraID) >= frame;
+}
+// </SpatiWorld>
+
 LL_ALIGN_PREFIX(16)
 class LLOctreeIntersect : public LLOctreeTraveler<LLViewerOctreeEntry, LLPointer<LLViewerOctreeEntry>>
 {
@@ -3961,7 +3975,8 @@ public:
         LLDrawable* drawable = (LLDrawable*)entry->getDrawable();
 
         if (!drawable || !gPipeline.hasRenderType(drawable->getRenderType())
-            || (!drawable->isVisible() && !LLSpatialPartition::sPickAnyPass)) // <SpatiWorld/>
+            || !(LLSpatialPartition::sPickVisibleFrame ? seenInFrame(drawable, LLSpatialPartition::sPickVisibleFrame)
+                                                       : drawable->isVisible())) // <SpatiWorld/>
         {
             return false;
         }

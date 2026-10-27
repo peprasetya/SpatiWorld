@@ -29,6 +29,7 @@
 // file include
 #define LLSELECTMGR_CPP
 #include "llselectmgr.h"
+#include "spatiandstereo.h" // <SpatiWorld/>
 #include "llmaterialmgr.h"
 
 // library includes
@@ -6827,6 +6828,7 @@ void LLSelectMgr::renderSilhouettes(bool for_hud)
         gGL.matrixMode(LLRender::MM_PROJECTION);
         gGL.pushMatrix();
         gGL.loadIdentity();
+        SpatiandStereo::fitHudProjection(); // <SpatiWorld/>
         F32 depth = llmax(1.f, hud_bbox.getExtentLocal().mV[VX] * 1.1f);
         // <FS:Ansariel> Performance improvement
         //gGL.ortho(-0.5f * LLViewerCamera::getInstance()->getAspect(), 0.5f * LLViewerCamera::getInstance()->getAspect(), -0.5f, 0.5f, 0.f, depth);

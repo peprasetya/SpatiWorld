@@ -14,12 +14,16 @@
 #include "fscommon.h"
 #include "llagent.h"
 #include "llagentui.h"
+#include "llviewercamera.h"
+#include "llagentcamera.h"
 #include "llchat.h"
 #include "llassetstorage.h"
 #include "llcallbacklist.h"
 #include "llexperiencecache.h"
 #include "llfilesystem.h"
 #include "llfloaterperms.h"
+#include "llfloaterreg.h"
+#include "llfloatertools.h"
 #include "llinventorydefines.h"
 #include "llinventoryfunctions.h"
 #include "llinventorymodel.h"
@@ -28,6 +32,7 @@
 #include "llselectmgr.h"
 #include "llstartup.h"
 #include "lltooldraganddrop.h"
+#include "lltoolcomp.h"
 #include "lltoolgrab.h"
 #include "lltoolmgr.h"
 #include "lltoolpie.h"
@@ -35,6 +40,7 @@
 #include "llviewerassetupload.h"
 #include "llviewercontrol.h"
 #include "llviewerinventory.h"
+#include "llviewermenu.h"
 #include "llviewerjointattachment.h"
 #include "llviewerobjectlist.h"
 #include "llviewerregion.h"
@@ -1322,7 +1328,8 @@ S32 attachmentPoint(const LLSD& point)
     {
         std::string name = entry.second ? entry.second->getName() : std::string();
         LLStringUtil::toLower(name);
-        if (name == wanted)
+        // A HUD point as the menus show it, too: "HUD Center 2" for "Center 2".
+        if (name == wanted || (entry.second && entry.second->getIsHUDAttachment() && "hud " + name == wanted))
         {
             return entry.first;
         }
@@ -1643,6 +1650,117 @@ void doUIClick(const Asker& asker, const LLSD& request)
             });
 }
 
+// Editing one of your own objects, as Edit in its menu does: selected, the build floater open on
+// the move tool, or "tool": "rotate" or "stretch". "off" closes the build floater, which lets go
+// of the selection.
+void doEdit(const Asker& asker, const LLSD& request)
+{
+    if (request["off"].asBoolean())
+    {
+        LLFloaterReg::hideInstance("build");
+        LLSelectMgr::getInstance()->deselectAll();
+        answer(asker, LLSD::emptyMap());
+        return;
+    }
+    LLViewerObject* prim = ownedPrim(asker, request);
+    if (!prim)
+    {
+        return;
+    }
+    LLSelectMgr::getInstance()->deselectAll();
+    LLSelectMgr::getInstance()->selectObjectAndFamily(prim->getRootEdit());
+    handle_object_edit();
+    const std::string tool = request["tool"].asString();
+    if (gFloaterTools && tool == "rotate")
+    {
+        gFloaterTools->setEditTool(LLToolCompRotate::getInstance());
+    }
+    else if (gFloaterTools && tool == "stretch")
+    {
+        gFloaterTools->setEditTool(LLToolCompScale::getInstance());
+    }
+    LLSD reply;
+    reply["hud"] = LLSelectMgr::getInstance()->getSelection()->getSelectType() == SELECT_TYPE_HUD;
+    // Where its middle is on the canvas, in raw pixels from the bottom left as pick and ui_click
+    // take them: for aiming at its edit handles.
+    LLViewerObject* root = prim->getRootEdit();
+    const LLVector3 middle = root->getPositionAgent();
+    const LLVector2 scale = gViewerWindow->getDisplayScale();
+    LLRect box;
+    if (root->isHUDAttachment() && SpatiandStereo::hudBox(box))
+    {
+        // mousePointHUD, the other way.
+        const F32 aspect = LLViewerCamera::getInstance()->getAspect();
+        const F32 zoom = gAgentCamera.mHUDCurZoom;
+        const F32 x = box.getCenterX() - middle.mV[VY] * zoom * box.getWidth() / aspect;
+        const F32 y = box.getCenterY() + middle.mV[VZ] * zoom * box.getHeight();
+        reply["middle"] = llsd::array(x * scale.mV[VX], y * scale.mV[VY]);
+    }
+    else
+    {
+        LLCoordGL at;
+        if (LLViewerCamera::getInstance()->projectPosAgentToScreen(middle, at, false))
+        {
+            reply["middle"] = llsd::array(at.mX * scale.mV[VX], at.mY * scale.mV[VY]);
+        }
+    }
+    answer(asker, reply);
+}
+
+// And dragging, as a hand on the pointer would: over the start a moment (for the tool there to
+// light up what it would take hold of), down, across in steps, up. Raw canvas pixels. Says
+// where the selection's first root was before and after, its size and its rotation.
+void doUIDrag(const Asker& asker, const LLSD& request)
+{
+    const LLCoordGL from(ll_round((F32)request["x"].asReal()), ll_round((F32)request["y"].asReal()));
+    const LLCoordGL to(ll_round((F32)request["to_x"].asReal()), ll_round((F32)request["to_y"].asReal()));
+    const S32 steps = llclamp(request.has("steps") ? request["steps"].asInteger() : 10, 1, 100);
+    auto where = []()
+    {
+        LLViewerObject* root = LLSelectMgr::getInstance()->getSelection()->getFirstRootObject(true);
+        if (!root)
+        {
+            return LLSD();
+        }
+        LLSD at;
+        at["position"] = triple(root->getPosition());
+        at["size"] = triple(root->getScale());
+        F32 roll, pitch, yaw;
+        root->getRotation().getEulerAngles(&roll, &pitch, &yaw);
+        at["rotation"] = triple(LLVector3(roll, pitch, yaw) * RAD_TO_DEG);
+        return at;
+    };
+    auto reply = std::make_shared<LLSD>();
+    (*reply)["before"] = where();
+    gViewerWindow->handleMouseMove(gViewerWindow->getWindow(), from, MASK_NONE);
+    auto step = std::make_shared<std::function<void(S32)>>();
+    *step = [asker, from, to, steps, where, reply, step](S32 i)
+    {
+        LLWindow* window = gViewerWindow->getWindow();
+        if (i == 0)
+        {
+            gViewerWindow->handleMouseDown(window, from, MASK_NONE);
+        }
+        if (i < steps)
+        {
+            const LLCoordGL at(from.mX + (to.mX - from.mX) * (i + 1) / steps, from.mY + (to.mY - from.mY) * (i + 1) / steps);
+            gViewerWindow->handleMouseMove(window, at, MASK_NONE);
+            waitFor(0.05f, []() { return false; }, [step, i](bool) { (*step)(i + 1); });
+            return;
+        }
+        gViewerWindow->handleMouseUp(window, to, MASK_NONE);
+        // The move goes to the region and comes back; a moment for it.
+        waitFor(1.f, []() { return false; },
+                [asker, where, reply, step](bool)
+                {
+                    (*reply)["after"] = where();
+                    *step = nullptr;
+                    answer(asker, *reply);
+                });
+    };
+    waitFor(0.3f, []() { return false; }, [step](bool) { (*step)(0); });
+}
+
 // Laying out prims of your own objects, a HUD's buttons say: where a prim sits (relative to its
 // root, or to the attachment point for a worn root) and its size, as the edit tool sets them.
 void doPlace(const Asker& asker, const LLSD& request)
@@ -1734,6 +1852,8 @@ void dispatch(U32 client, const std::string& line)
         { "place", doPlace },
         { "pick", doPick },
         { "ui_click", doUIClick },
+        { "ui_drag", doUIDrag },
+        { "edit", doEdit },
         { "link", doLink },
         { "name", doName },
         { "dump_ui", doDumpUI },

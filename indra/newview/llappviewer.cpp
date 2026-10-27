@@ -1785,6 +1785,15 @@ bool LLAppViewer::doFrame()
                 // copied into its half of the window; the window is shown once, after both.
                 // First, whatever spatiand-host has said since the last frame: the size to draw at.
                 SpatiandStereo::listen();
+                // Picks asked for since the last frame are answered first, while the camera is
+                // still the aim and the world view the box, as when their pointer positions were
+                // taken. display() answers them before it changes either; in stereo beginFrame
+                // has already turned the camera to the head, and the edit tools, which find the
+                // handle under the pointer through the camera, missed every handle in the world.
+                if (SpatiandStereo::isStereo())
+                {
+                    gViewerWindow->performPick();
+                }
                 SpatiandStereo::beginFrame();
                 const S32 eyes = SpatiandStereo::eyeCount();
                 for (S32 eye = 0; eye < eyes; ++eye)

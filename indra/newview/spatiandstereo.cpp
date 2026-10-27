@@ -47,6 +47,7 @@
 #include "lltoolbarview.h"
 #include "llviewermenu.h"
 #include "llimagepng.h"
+#include "lldrawable.h"
 #include "v3math.h"
 
 #include <cmath>
@@ -78,6 +79,7 @@ S32                   SpatiandStereo::sEyeWidth = 0;
 S32                   SpatiandStereo::sEyeHeight = 0;
 LLRect                SpatiandStereo::sBoxRaw;
 bool                  SpatiandStereo::sHudCovered = false;
+U32                   SpatiandStereo::sHudFrame = 0;
 std::string           SpatiandStereo::sDumpDir;
 LLRect                SpatiandStereo::sChromeBox;
 bool                  SpatiandStereo::sPointerOnUI = false;
@@ -1046,6 +1048,8 @@ bool SpatiandStereo::beginUI(ELayer layer)
     if (layer == LAYER_FLOATERS)
     {
         sHudCovered = false;
+        // Set again if the HUD is drawn; see hudVisibleFrame.
+        sHudFrame = 0;
         // Which floater is active is settled here, once, for the whole frame: the two floater
         // layers and the cursor all have to agree on it.
         LLFloater* active = findActiveFloater();
@@ -1637,33 +1641,77 @@ void SpatiandStereo::keepHeadersReachable()
     }
 }
 
+// The HUD's projection fills whatever viewport it gets; the viewport is the canvas, so the fit
+// shrinks it to where the box is on the canvas, and everything past the box's edges is simply
+// more of the same space. False when there is no box or canvas to fit to.
+static bool hud_fit(const LLRect& box, glm::mat4& fit)
+{
+    const F32 canvas_w = (F32)gViewerWindow->getWindowWidthRaw();
+    const F32 canvas_h = (F32)gViewerWindow->getWindowHeightRaw();
+    if (box.getWidth() <= 0 || box.getHeight() <= 0 || canvas_w <= 0.f || canvas_h <= 0.f)
+    {
+        return false;
+    }
+    const F32 sx = box.getWidth() / canvas_w;
+    const F32 sy = box.getHeight() / canvas_h;
+    const F32 cx = (box.getCenterX() / canvas_w) * 2.f - 1.f;
+    const F32 cy = (box.getCenterY() / canvas_h) * 2.f - 1.f;
+    fit = glm::translate(glm::vec3(cx, cy, 0.f)) * glm::scale(glm::vec3(sx, sy, 1.f));
+    return true;
+}
+
 void SpatiandStereo::fitHudToCanvas()
 {
     if (!isStereo() || !gViewerWindow)
     {
         return;
     }
-    const LLRect box = sBoxRaw;
-    const F32 canvas_w = (F32)gViewerWindow->getWindowWidthRaw();
-    const F32 canvas_h = (F32)gViewerWindow->getWindowHeightRaw();
-    if (box.getWidth() <= 0 || box.getHeight() <= 0 || canvas_w <= 0.f || canvas_h <= 0.f)
+    // About to be culled and drawn in this visibility frame.
+    sHudFrame = (U32)LLDrawable::getCurrentFrame();
+    glm::mat4 fit;
+    if (!hud_fit(sBoxRaw, fit))
     {
         return;
     }
-    // The HUD's projection fills whatever viewport it gets; the viewport is the canvas, so
-    // shrink it to where the box is on the canvas, and everything past the box's edges is
-    // simply more of the same space.
-    const F32 sx = box.getWidth() / canvas_w;
-    const F32 sy = box.getHeight() / canvas_h;
-    const F32 cx = (box.getCenterX() / canvas_w) * 2.f - 1.f;
-    const F32 cy = (box.getCenterY() / canvas_h) * 2.f - 1.f;
-    glm::mat4 fit = glm::translate(glm::vec3(cx, cy, 0.f)) * glm::scale(glm::vec3(sx, sy, 1.f));
     glm::mat4 proj = fit * get_current_projection();
     gGL.matrixMode(LLRender::MM_PROJECTION);
     gGL.loadMatrix(glm::value_ptr(proj));
     set_current_projection(proj);
     gGL.matrixMode(LLRender::MM_MODELVIEW);
-    glViewport(0, 0, (GLsizei)canvas_w, (GLsizei)canvas_h);
+    glViewport(0, 0, (GLsizei)gViewerWindow->getWindowWidthRaw(), (GLsizei)gViewerWindow->getWindowHeightRaw());
+}
+
+void SpatiandStereo::fitHudProjection()
+{
+    glm::mat4 fit;
+    if (!drawingPanel() || !gViewerWindow || !hud_fit(sBoxRaw, fit))
+    {
+        return;
+    }
+    gGL.multMatrix(glm::value_ptr(fit));
+    glViewport(0, 0, (GLsizei)gViewerWindow->getWindowWidthRaw(), (GLsizei)gViewerWindow->getWindowHeightRaw());
+}
+
+bool SpatiandStereo::drawingPanel()
+{
+    return isStereo() && LLRender::sLayerAlpha;
+}
+
+bool SpatiandStereo::toViewBox(S32& x, S32& y)
+{
+    LLRect box;
+    if (!hudBox(box))
+    {
+        return false;
+    }
+    x -= box.mLeft;
+    y -= box.mBottom;
+    return true;
+}
+
+U32 SpatiandStereo::hudVisibleFrame()
+{
+    return isStereo() ? sHudFrame : 0;
 }
 
 bool SpatiandStereo::hudBox(LLRect& box)

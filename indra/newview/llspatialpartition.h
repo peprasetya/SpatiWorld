@@ -382,11 +382,13 @@ public:
 class LLSpatialPartition: public LLViewerOctreePartition, public LLGeometryManager
 {
 public:
-    // <SpatiWorld> While set, a line-segment pick takes drawables whatever pass last saw them.
-    // In stereo a frame is drawn twice, a pass per eye, and every pass begins a new visibility
-    // frame; the HUD is drawn in the first eye's pass only (on the UI panel), so by the time a
-    // click is tested it is never "visible", and every click on it fell through to the world.
-    static bool sPickAnyPass;
+    // <SpatiWorld> When not 0, a line-segment pick takes the drawables seen in this visibility
+    // frame rather than in the current one. In stereo a frame is drawn twice, a pass per eye,
+    // and every pass begins a new visibility frame; the HUD is drawn in the first eye's pass
+    // only (on the UI panel), so by the time a click is tested it is never "visible", and every
+    // click on it fell through to the world. The HUD's pick names the frame the HUD was drawn in
+    // (SpatiandStereo::hudVisibleFrame): what was drawn there can be clicked, as in 2D.
+    static U32 sPickVisibleFrame;
     // </SpatiWorld>
     LLSpatialPartition(U32 data_mask,  bool render_by_group, LLViewerRegion* regionp);
     virtual ~LLSpatialPartition();

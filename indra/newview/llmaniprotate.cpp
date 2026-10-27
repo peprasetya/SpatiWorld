@@ -27,6 +27,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llmaniprotate.h"
+#include "spatiandstereo.h" // <SpatiWorld/>
 
 // library includes
 #include "llmath.h"
@@ -1245,6 +1246,14 @@ bool LLManipRotate::updateVisiblity()
         // so use getWorldViewHeightRaw as scale factor when converting to pixel coordinates
         mCenterScreen.set((S32)((0.5f - center.mV[VY]) / gAgentCamera.mHUDCurZoom * gViewerWindow->getWorldViewHeightScaled()),
                             (S32)((center.mV[VZ] + 0.5f) / gAgentCamera.mHUDCurZoom * gViewerWindow->getWorldViewHeightScaled()));
+        // <SpatiWorld> In stereo the view, and the HUD in it, are the box on the canvas.
+        LLRect box;
+        if (SpatiandStereo::hudBox(box))
+        {
+            mCenterScreen.mX += box.mLeft;
+            mCenterScreen.mY += box.mBottom;
+        }
+        // </SpatiWorld>
         visible = true;
     }
     else
@@ -1781,6 +1790,7 @@ void LLManipRotate::mouseToRay( S32 x, S32 y, LLVector3* ray_pt, LLVector3* ray_
 {
     if (LLSelectMgr::getInstance()->getSelection()->getSelectType() == SELECT_TYPE_HUD)
     {
+        SpatiandStereo::toViewBox(x, y); // <SpatiWorld/>
         F32 mouse_x = (((F32)x / gViewerWindow->getWorldViewRectScaled().getWidth()) - 0.5f) / gAgentCamera.mHUDCurZoom;
         F32 mouse_y = ((((F32)y) / gViewerWindow->getWorldViewRectScaled().getHeight()) - 0.5f) / gAgentCamera.mHUDCurZoom;
 
