@@ -26,6 +26,7 @@
 
 #include "llviewerprecompiledheaders.h"
 #include "llviewermessage.h"
+#include "spatiworldbridge.h" // <SpatiWorld/>
 
 // Linden libraries
 #include "llanimationstates.h"
@@ -2944,6 +2945,9 @@ void process_chat_from_simulator(LLMessageSystem *msg, void **user_data)
 
         color.setVec(1.f,1.f,1.f,1.f);
         msg->getStringFast(_PREHASH_ChatData, _PREHASH_Message, mesg);
+        // <SpatiWorld> What your own objects say, kept for a coding tool; see SpatiWorldBridge.
+        SpatiWorldBridge::heardChat(from_id, owner_id, chat.mSourceType, chat.mChatType, from_name, mesg);
+        // </SpatiWorld>
 
         // NaCl - Newline flood protection
         static LLCachedControl<bool> useAntiSpam(gSavedSettings, "UseAntiSpam");
@@ -4763,6 +4767,16 @@ void process_kill_object(LLMessageSystem *mesgsys, void **user_data)
 // <FS:Techwolf Lupindo> area search
 void process_object_properties(LLMessageSystem *msg, void**user_data)
 {
+    // <SpatiWorld> Objects' names, for a coding tool; see SpatiWorldBridge.
+    for (S32 block = 0; block < msg->getNumberOfBlocksFast(_PREHASH_ObjectData); ++block)
+    {
+        LLUUID id;
+        std::string name;
+        msg->getUUIDFast(_PREHASH_ObjectData, _PREHASH_ObjectID, id, block);
+        msg->getStringFast(_PREHASH_ObjectData, _PREHASH_Name, name, block);
+        SpatiWorldBridge::heardObjectName(id, name);
+    }
+    // </SpatiWorld>
     // Send the result to the corresponding requesters.
     LLSelectMgr::processObjectProperties(msg, user_data);
 
@@ -4785,6 +4799,15 @@ void process_object_properties(LLMessageSystem *msg, void**user_data)
 // <FS:Ansariel> Anti spam
 void process_object_properties_family(LLMessageSystem *msg, void**user_data)
 {
+    // <SpatiWorld> Objects' names, for a coding tool; see SpatiWorldBridge.
+    {
+        LLUUID id;
+        std::string name;
+        msg->getUUIDFast(_PREHASH_ObjectData, _PREHASH_ObjectID, id);
+        msg->getStringFast(_PREHASH_ObjectData, _PREHASH_Name, name);
+        SpatiWorldBridge::heardObjectName(id, name);
+    }
+    // </SpatiWorld>
     // Send the result to the corresponding requesters.
     LLSelectMgr::processObjectPropertiesFamily(msg, user_data);
 
@@ -8439,12 +8462,15 @@ void process_script_dialog(LLMessageSystem* msg, void**)
     }
 
     LLNotificationForm form;
+    LLSD bridge_buttons = LLSD::emptyArray(); // <SpatiWorld/>
     for (i = 0; i < button_count; i++)
     {
         std::string tdesc;
         msg->getString("Buttons", "ButtonLabel", tdesc, i);
         form.addElement("button", std::string(tdesc));
+        bridge_buttons.append(tdesc); // <SpatiWorld/>
     }
+    SpatiWorldBridge::heardDialog(object_id, owner_id, object_name, message, chat_channel, bridge_buttons); // <SpatiWorld/>
 
     LLSD args;
     args["TITLE"] = object_name;

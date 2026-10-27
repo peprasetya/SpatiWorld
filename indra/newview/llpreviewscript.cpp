@@ -27,6 +27,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "llpreviewscript.h"
+#include "spatiworldbridge.h" // <SpatiWorld/>
 
 #include "llassetstorage.h"
 #include "llbutton.h"
@@ -3313,6 +3314,15 @@ void LLLiveLSLEditor::processScriptRunningReply(LLMessageSystem* msg, void**)
     LLUUID object_id;
     msg->getUUIDFast(_PREHASH_Script, _PREHASH_ObjectID, object_id);
     msg->getUUIDFast(_PREHASH_Script, _PREHASH_ItemID, item_id);
+
+    // <SpatiWorld> A coding tool asks too, to save a script without stopping it; see SpatiWorldBridge.
+    {
+        bool running = false, mono = false;
+        msg->getBOOLFast(_PREHASH_Script, _PREHASH_Running, running);
+        msg->getBOOLFast(_PREHASH_Script, "Mono", mono);
+        SpatiWorldBridge::heardScriptRunning(object_id, item_id, running, mono);
+    }
+    // </SpatiWorld>
 
     LLSD floater_key;
     floater_key["taskid"] = object_id;

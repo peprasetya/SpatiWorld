@@ -885,6 +885,7 @@ set(viewer_SOURCE_FILES
     llxmlrpclistener.cpp
     llxmlrpctransaction.cpp
     spatiandstereo.cpp
+    spatiworldbridge.cpp
     noise.cpp
     particleeditor.cpp
     permissionstracker.cpp
@@ -1750,6 +1751,7 @@ set(viewer_HEADER_FILES
     llxmlrpclistener.h
     llxmlrpctransaction.h
     spatiandstereo.h
+    spatiworldbridge.h
     noise.h
     particleeditor.h
     permissionstracker.h

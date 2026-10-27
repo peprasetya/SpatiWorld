@@ -6613,6 +6613,17 @@
       <key>Value</key>
       <integer>1</integer>
     </map>
+    <key>SpatiWorldBridge</key>
+    <map>
+      <key>Comment</key>
+      <string>Let a coding tool on this computer (slsync, used by Claude Code) read and write the scripts and notecards in your own objects, and hear what they say, through a socket only you can open ($XDG_RUNTIME_DIR/spatiworld/bridge.sock).</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>Boolean</string>
+      <key>Value</key>
+      <integer>0</integer>
+    </map>
     <key>SpatiWorldCanvasWidth</key>
     <map>
       <key>Comment</key>
@@ -6682,13 +6693,13 @@
     <key>SpatiWorldUIScale</key>
     <map>
       <key>Comment</key>
-      <string>In stereo, the UI scale, in place of UIScaleFactor: a pixel in the glasses is a far smaller angle than on a desk, and the UI is pointed at from a metre away.</string>
+      <string>In stereo, how much bigger the UI is than in a window (UIScaleFactor times this). 1 lays it out exactly as the window does, in a view the size of one eye.</string>
       <key>Persist</key>
       <integer>1</integer>
       <key>Type</key>
       <string>F32</string>
       <key>Value</key>
-      <real>1.4</real>
+      <real>1.0</real>
     </map>
     <key>SpatiWorldFlycamButton</key>
     <map>
