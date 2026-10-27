@@ -29,6 +29,7 @@
 #include "llappviewer.h"
 #include "llstartup.h"
 #include "spatiandstereo.h"
+#include "spatiworldbridge.h" // <SpatiWorld/>
 
 #if LL_VELOPACK && LL_WINDOWS
 #include "llvelopack.h"
@@ -3373,6 +3374,7 @@ bool idle_startup()
         // with how many eyes. Nothing before this point asks, so the login window stays
         // the ordinary flat one whatever ends up in front of it.
         SpatiandStereo::detect();
+        SpatiWorldBridge::start(); // <SpatiWorld/>
 
         do_startup_frame();
 
