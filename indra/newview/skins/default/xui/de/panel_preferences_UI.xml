@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <panel label="UI-Pref" name="Display panel">
-<tab_container label="SpatiWorld Prefs" name="tabs">
+<tab_container label="Firestorm Prefs" name="tabs">
 
 	<!--3D World-->
 	<panel label="3D-Welt" name="UI Prefs Panel">

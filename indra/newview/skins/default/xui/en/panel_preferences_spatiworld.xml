@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<panel
+ border="true"
+ follows="all"
+ height="480"
+ layout="topleft"
+ left="1"
+ top="1"
+ width="540"
+ label="SpatiWorld"
+ name="spatiworld_panel">
+    <text
+     type="string"
+     follows="left|top"
+     font="SansSerifBold"
+     height="16"
+     layout="topleft"
+     left="10"
+     top="12"
+     width="500"
+     name="coding_header">
+        Coding tools
+    </text>
+    <check_box
+     control_name="SpatiWorldBridge"
+     follows="left|top"
+     height="16"
+     layout="topleft"
+     left="20"
+     top_pad="8"
+     width="500"
+     label="Let a coding tool on this computer work on my objects' scripts"
+     tool_tip="Opens a socket only you can reach on this computer, through which slsync (and Claude Code) reads and writes the scripts and notecards in your own objects, and hears what they say. Nothing on the network can reach it."
+     name="SpatiWorldBridge" />
+    <text
+     type="string"
+     follows="left|top"
+     height="58"
+     layout="topleft"
+     left="40"
+     top_pad="4"
+     width="480"
+     wrap="true"
+     name="coding_note">
+Claude Code (through slsync) can then read and write the scripts and notecards in objects you own, compile them, and see what they say: llOwnerSay, script errors, dialogs. It never touches other people's objects, and never speaks on channel 0.
+    </text>
+    <text
+     type="string"
+     follows="left|top"
+     font="SansSerifBold"
+     height="16"
+     layout="topleft"
+     left="10"
+     top_pad="14"
+     width="500"
+     name="glasses_header">
+        In the glasses
+    </text>
+    <slider
+     control_name="SpatiWorldUIScale"
+     decimal_digits="2"
+     follows="left|top"
+     height="16"
+     increment="0.05"
+     initial_value="1"
+     label="UI size, against the window's:"
+     label_width="220"
+     layout="topleft"
+     left="20"
+     max_val="2"
+     min_val="0.5"
+     name="SpatiWorldUIScale"
+     tool_tip="1 lays the UI out exactly as the window does. Takes effect when the view is next resized."
+     top_pad="10"
+     width="440" />
+    <slider
+     control_name="SpatiWorldPanelDistance"
+     decimal_digits="2"
+     follows="left|top"
+     height="16"
+     increment="0.05"
+     label="Windows' distance (m):"
+     label_width="220"
+     layout="topleft"
+     left="20"
+     max_val="5"
+     min_val="0.5"
+     name="SpatiWorldPanelDistance"
+     top_pad="8"
+     width="440" />
+    <slider
+     control_name="SpatiWorldActiveDistance"
+     decimal_digits="2"
+     follows="left|top"
+     height="16"
+     increment="0.05"
+     label="Window being used (m):"
+     label_width="220"
+     layout="topleft"
+     left="20"
+     max_val="5"
+     min_val="0.4"
+     name="SpatiWorldActiveDistance"
+     top_pad="8"
+     width="440" />
+    <slider
+     control_name="SpatiWorldChromeDistance"
+     decimal_digits="2"
+     follows="left|top"
+     height="16"
+     increment="0.05"
+     label="Menus and toolbars (m):"
+     label_width="220"
+     layout="topleft"
+     left="20"
+     max_val="5"
+     min_val="0.4"
+     name="SpatiWorldChromeDistance"
+     top_pad="8"
+     width="440" />
+</panel>
