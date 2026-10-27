@@ -27,6 +27,7 @@
 #include "llviewerprecompiledheaders.h"
 
 #include "pipeline.h"
+#include "spatiandstereo.h" // <SpatiWorld/>
 
 // library includes
 #include "llimagepng.h"
@@ -7406,7 +7407,11 @@ LLViewerObject* LLPipeline::lineSegmentIntersectInHUD(const LLVector4a& start, c
         LLSpatialPartition* part = region->getSpatialPartition(LLViewerRegion::PARTITION_HUD);
         if (part)
         {
+            // <SpatiWorld> See LLSpatialPartition::sPickAnyPass.
+            LLSpatialPartition::sPickAnyPass = SpatiandStereo::isStereo();
             LLDrawable* hit = part->lineSegmentIntersect(start, end, pick_transparent, false, true, false, face_hit, intersection, tex_coord, normal, tangent);
+            LLSpatialPartition::sPickAnyPass = false;
+            // </SpatiWorld>
             if (hit)
             {
                 drawable = hit;

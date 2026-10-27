@@ -1848,7 +1848,10 @@ bool LLAppViewer::doFrame()
 
             // yield cooperatively when not running as foreground window
             // and when not quiting (causes trouble at mac's cleanup stage)
-            if (!LLApp::isExiting()
+            // <SpatiWorld> Never in the room: the room is what the wearer sees, whatever the X
+            // server thinks of the window's focus, and sleeping 40 ms a frame there held it to
+            // 20-odd frames a second, every turn of the head a jump.
+            if (!LLApp::isExiting() && !SpatiandStereo::isStereo()
                 && ((gViewerWindow && !gViewerWindow->getWindow()->getVisible())
                     || !gFocusMgr.getAppHasFocus()))
             {

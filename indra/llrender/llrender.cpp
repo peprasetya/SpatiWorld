@@ -1467,6 +1467,15 @@ void LLRender::blendFunc(eBlendFactor color_sfactor, eBlendFactor color_dfactor,
     llassert(alpha_sfactor < BF_UNDEF);
     llassert(alpha_dfactor < BF_UNDEF);
 
+    // <SpatiWorld> See LLRender::sLayerAlpha. An alpha object's "glow suppression" keeps alpha at
+    // d*(1-a), so in a layer it would uncover whatever it is drawn over; it covers, as "over" does.
+    if (sLayerAlpha && color_sfactor == BF_SOURCE_ALPHA && color_dfactor == BF_ONE_MINUS_SOURCE_ALPHA
+        && alpha_sfactor == BF_ZERO && alpha_dfactor == BF_ONE_MINUS_SOURCE_ALPHA)
+    {
+        alpha_sfactor = BF_ONE;
+    }
+    // </SpatiWorld>
+
     if (mCurrBlendColorSFactor != color_sfactor || mCurrBlendColorDFactor != color_dfactor ||
         mCurrBlendAlphaSFactor != alpha_sfactor || mCurrBlendAlphaDFactor != alpha_dfactor)
     {

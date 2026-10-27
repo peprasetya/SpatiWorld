@@ -77,6 +77,20 @@ public:
     // HUD attachments are laid out for the box; drawn on the whole canvas they keep their
     // size and place, and may be moved out past its edges.
     static void fitHudToCanvas();
+    // That box in the main view's UI coordinates, for finding what HUD prim the pointer is on
+    // (LLViewerWindow::mousePointHUD). False when not in stereo.
+    static bool hudBox(LLRect& box);
+    // **The HUD covers the layer it is drawn in.** The UI layer is laid over the world by its
+    // alpha, and the HUD's passes keep alpha writes off (and an alpha object's blend only ever
+    // lowers alpha), so a HUD drawn there left no coverage and vanished. Wherever the HUD's
+    // solid and cut-out faces wrote depth, the layer is covered; called before the HUD's alpha
+    // pass, whose objects then add their own alpha (see LLRender::sLayerAlpha), so a clear prim
+    // over a button does not turn into a black box. Once per HUD drawing; cheap to call again.
+    static void coverHud();
+    // For seeing what each UI layer holds: the next frame's layers are saved as PNG files in
+    // dir, floaters.png, active.png and chrome.png. dumpingLayers is true until they are.
+    static void dumpLayers(const std::string& dir);
+    static bool dumpingLayers() { return !sDumpDir.empty(); }
     // **A floater's title bar stays where it can be grabbed.** The menu bar, navigation bar and
     // toolbars stand in front of the floaters, so a floater dragged up under the menu bar had
     // its title bar covered by it: every click there went to the menus, and the window could
@@ -239,6 +253,8 @@ private:
     // world view is moved to the origin, and this is where it really is.
     static LLRect sBoxRaw;
     static LLRect sChromeBox;
+    static bool sHudCovered;
+    static std::string sDumpDir;
     // Whether the UI covers the pixel under the pointer, read back when the panel is drawn.
     static bool sPointerOnUI;
     static bool sUIDrawn;

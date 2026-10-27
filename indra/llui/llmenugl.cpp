@@ -3423,7 +3423,11 @@ void LLMenuGL::showPopup(LLView* spawning_view, LLMenuGL* menu, S32 x, S32 y, S3
 
     LLMenuHolderGL::sContextMenuSpawnPos.set(mouse_x,mouse_y);
 
-    const LLRect menu_region_rect = LLMenuGL::sMenuContainer->getRect();
+    // <SpatiWorld> Where menus may go, as for submenus and context menus: in stereo the holder spans
+    // a canvas three views tall, and a menu placed by it could open where the pointer cannot follow.
+    //const LLRect menu_region_rect = LLMenuGL::sMenuContainer->getRect();
+    const LLRect menu_region_rect = LLMenuGL::sMenuContainer->getMenuRect();
+    // </SpatiWorld>
 
     const S32 HPAD = 2;
     LLRect rect = menu->getRect();
