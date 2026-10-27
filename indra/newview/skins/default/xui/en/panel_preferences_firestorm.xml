@@ -7,7 +7,7 @@
  left="1"
  top="1"
  width="540"
- label="SpatiWorld"
+ label="Firestorm"
  name="firestorm">
  
 <panel.string name="BeamsOffLabel">
@@ -24,7 +24,7 @@
     </string>
 
 <tab_container
- label="SpatiWorld Prefs"
+ label="Firestorm Prefs"
  layout="topleft"
  follows="all"
  top="5"

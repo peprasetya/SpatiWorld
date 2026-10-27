@@ -217,10 +217,17 @@ https://accounts.secondlife.com/change_email/
         <panel
          class="panel_preference_firestorm"
          filename="panel_preferences_firestorm.xml"
-         label="SpatiWorld"
+         label="Firestorm"
          layout="topleft"
          help_topic="preferences_firestorm_tab"
          name="firestorm" />
+        <panel
+         class="panel_preference"
+         filename="panel_preferences_spatiworld.xml"
+         label="SpatiWorld"
+         layout="topleft"
+         help_topic="preferences_spatiworld_tab"
+         name="spatiworld" />
         <panel
          class="panel_preference_opensim"
          filename="panel_preferences_opensim.xml"

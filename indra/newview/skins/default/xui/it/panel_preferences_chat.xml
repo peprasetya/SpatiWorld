@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <panel label="Chat" name="chat">
-	<tab_container label="SpatiWorld Prefs" name="tabs">
+	<tab_container label="Firestorm Prefs" name="tabs">
 		<panel label="Vista" name="ChatVisuals">
 			<text name="console_font_size" width="180">
 				Dimensione carattere console:
